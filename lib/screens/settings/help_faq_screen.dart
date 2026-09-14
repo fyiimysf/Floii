@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
-import '../../utils/constants/strings.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../widgets/common/cards.dart';
 
@@ -11,7 +10,6 @@ class HelpFaqScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: CustomScrollView(
@@ -32,8 +30,14 @@ class HelpFaqScreen extends StatelessWidget {
                     color: AppColors.secondary,
                     size: AppDimensions.iconXL,
                   ),
-                  const SizedBox(height: 8),
-                  Text(context.tr('helpAndFaq')),
+                  const SizedBox(width: AppDimensions.smallSpacing),
+                  Flexible(
+                    child: Text(
+                      context.tr('helpAndFaq'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               centerTitle: true,

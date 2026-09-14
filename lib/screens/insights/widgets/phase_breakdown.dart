@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../models/cycle_models.dart';
 import '../../../services/cycle/cycle_calculation_service.dart';
 import '../../../services/cycle/phase_service.dart';
-import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/dimensions.dart';
 import '../../../widgets/common/phase_widgets.dart';
 
@@ -48,6 +47,9 @@ class PhaseBreakdown extends StatelessWidget {
     }
 
     final phases = PhaseService.calculatePhaseDetails(cycleToUse, stats);
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final currentPhase = PhaseService.getCurrentPhase(phases);
+    final crossAxisCount = MediaQuery.sizeOf(context).width < 600 ? 2 : 4;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,19 +61,25 @@ class PhaseBreakdown extends StatelessWidget {
               ),
         ),
         const SizedBox(height: AppDimensions.elementSpacing),
-        SizedBox(
-          height: 100,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: phases.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(width: AppDimensions.elementSpacing),
-            itemBuilder: (context, index) => PhaseCard(
-              phase: phases[index],
-              isCurrent:
-                  PhaseService.isDateInPhase(DateTime.now(), phases[index]),
-            ),
+        GridView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisExtent: 146 * textScale,
+            mainAxisSpacing: AppDimensions.elementSpacing,
+            crossAxisSpacing: AppDimensions.elementSpacing,
           ),
+          children: [
+            for (final phase in phases)
+              PhaseCard(
+                phase: phase,
+                isCurrent: identical(phase, currentPhase),
+                isCompleted: currentPhase == null
+                    ? false
+                    : phase.endDate.isBefore(currentPhase.startDate),
+              ),
+          ],
         ),
       ],
     );

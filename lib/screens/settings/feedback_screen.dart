@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
-import '../../utils/constants/strings.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../widgets/common/cards.dart';
 
@@ -100,8 +99,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     color: AppColors.ovulation,
                     size: AppDimensions.iconLarge,
                   ),
-                  const SizedBox(height: 8),
-                  Text(context.tr('sendFeedback')),
+                  const SizedBox(width: AppDimensions.smallSpacing),
+                  Flexible(
+                    child: Text(
+                      context.tr('sendFeedback'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               centerTitle: true,
@@ -253,7 +258,11 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Icon(Icons.send),
+                                : const Icon(
+                                    Icons.send,
+                                    size: 20,
+                                    color: Colors.white,
+                                  ),
                             label: Text(
                               _isSubmitting
                                   ? context.tr('sending')

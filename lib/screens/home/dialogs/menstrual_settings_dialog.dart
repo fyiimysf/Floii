@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/dimensions.dart';
-import '../../../utils/constants/strings.dart';
 import '../../../utils/extensions/localization_extension.dart';
 import '../../../widgets/common/cards.dart';
 

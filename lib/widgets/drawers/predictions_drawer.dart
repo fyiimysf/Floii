@@ -10,7 +10,6 @@ import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
 import '../common/cards.dart';
 import '../common/phase_widgets.dart';
-import '../common/indicators.dart';
 
 class PredictionsDrawer extends StatelessWidget {
   final Map<String, dynamic> stats;
@@ -371,7 +370,7 @@ class _CycleCard extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isCurrent ? Icons.timeline : Icons.auto_awesome,
+                Icons.timeline,
                 color: isCurrent ? AppColors.primary : AppColors.predicted,
                 size: AppDimensions.iconMedium,
               ),

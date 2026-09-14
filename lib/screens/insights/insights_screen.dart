@@ -5,18 +5,38 @@ import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../widgets/common/cards.dart';
+import '../../widgets/common/floating_tab_bar.dart';
 import '../../widgets/common/indicators.dart';
 import 'widgets/fertility_forecast.dart';
 import 'widgets/phase_breakdown.dart';
 import 'widgets/statistics_grid.dart';
 
-class InsightsScreen extends StatelessWidget {
+class InsightsScreen extends StatefulWidget {
   final Map<String, dynamic> stats;
 
-  const InsightsScreen({
-    super.key,
-    required this.stats,
-  });
+  const InsightsScreen({super.key, required this.stats});
+
+  @override
+  State<InsightsScreen> createState() => InsightsScreenState();
+}
+
+class InsightsScreenState extends State<InsightsScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void scrollToTop() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
 
   DateTime? _getCurrentPrediction(Map<String, dynamic> stats) {
     final originalPrediction = stats['prediction'] as DateTime?;
@@ -39,8 +59,13 @@ class InsightsScreen extends StatelessWidget {
     return lastPeriodStart.add(Duration(days: cyclesPassed * averageCycle));
   }
 
+  void _openTrends() {
+    Navigator.of(context).pushNamed('/trends', arguments: widget.stats);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final stats = widget.stats;
     final prediction = _getCurrentPrediction(stats);
     final phaseName = PhaseService.getPhaseName(DateTime.now(), stats);
     final phaseColor = PhaseService.getPhaseColor(phaseName);
@@ -58,28 +83,18 @@ class InsightsScreen extends StatelessWidget {
 
     return Scaffold(
       body: CustomScrollView(
+        controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          SliverAppBar(
-            expandedHeight: 80,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.insights,
-                    color: AppColors.primary,
-                    size: AppDimensions.iconMedium,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(context.tr('insights')),
-                ],
-              ),
-              centerTitle: true,
-            ),
+          FloatingTabBar(
+            title: context.tr('insights'),
+            accentColor: AppColors.ovulation,
+            onAction: _openTrends,
+            actionLabel: context.tr('trends'),
+            actionTooltip: context.tr('viewTrends'),
+          ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: AppDimensions.smallSpacing),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(
@@ -127,10 +142,10 @@ class InsightsScreen extends StatelessWidget {
                   if (!isNarrow) ...[
                     ProgressIndicator(
                       value: progress,
-                      size: 80,
-                      strokeWidth: 10,
+                      size: 92,
+                      strokeWidth: 12,
                       color: phaseColor,
-                      label: context.tr('cycle'),
+                      showPercentage: true,
                     ),
                     const SizedBox(width: AppDimensions.elementSpacing),
                   ],

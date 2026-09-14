@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../screens/home/home_screen.dart';
+import '../main_shell.dart';
 import 'onboarding_screen.dart';
 
 class AppWrapper extends StatefulWidget {
@@ -40,7 +40,7 @@ class _AppWrapperState extends State<AppWrapper> {
     }
 
     if (_hasCompletedOnboarding) {
-      return const HomeScreen();
+      return const MainShell();
     } else {
       return const OnboardingScreen();
     }

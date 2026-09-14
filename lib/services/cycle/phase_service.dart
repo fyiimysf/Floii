@@ -113,7 +113,7 @@ class PhaseService {
       case 'Menstrual':
         return Icons.water_drop;
       case 'Follicular':
-        return Icons.local_florist;
+        return Icons.spa_outlined;
       case 'Ovulation':
         return Icons.wb_sunny;
       case 'Luteal':
@@ -121,6 +121,38 @@ class PhaseService {
       default:
         return Icons.calendar_today;
     }
+  }
+
+  static PredictedRange? currentCycleFromStats(Map<String, dynamic> stats) {
+    final periods = stats['periods'] as List<List<DateTime>>? ?? [];
+    if (periods.isEmpty) return null;
+
+    final lastPeriod = periods.last;
+    final averageCycle = stats['average'] as int? ?? 28;
+    final periodLength = stats['currentPeriodLength'] as int? ?? 5;
+    final lastPeriodStart = lastPeriod.first;
+    final now = DateTime.now();
+
+    final daysSinceLastPeriod = now.difference(lastPeriodStart).inDays;
+
+    if (daysSinceLastPeriod <= averageCycle) {
+      return PredictedRange(
+        index: -1,
+        startDate: lastPeriodStart,
+        endDate: lastPeriod.last,
+      );
+    }
+
+    final cyclesPassed = daysSinceLastPeriod ~/ averageCycle;
+    final predictedCycleStart = lastPeriodStart.add(
+      Duration(days: cyclesPassed * averageCycle),
+    );
+
+    return PredictedRange(
+      index: cyclesPassed - 1,
+      startDate: predictedCycleStart,
+      endDate: predictedCycleStart.add(Duration(days: periodLength - 1)),
+    );
   }
 
   static List<PhaseDetail> calculatePhaseDetails(

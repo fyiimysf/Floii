@@ -50,7 +50,10 @@ class ClayCard extends StatelessWidget {
           width: AppDimensions.borderThin,
         ),
       ),
-      child: child,
+      child: Material(
+        type: MaterialType.transparency,
+        child: child,
+      ),
     );
 
     if (onTap != null) {
@@ -94,13 +97,15 @@ class MetricCard extends StatelessWidget {
           Center(
             child: Text(
               title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
                 Container(
@@ -116,13 +121,17 @@ class MetricCard extends StatelessWidget {
                     size: AppDimensions.iconMedium,
                   ),
                 ),
-                const SizedBox(height: AppDimensions.elementSpacing),
+                const SizedBox(width: AppDimensions.smallSpacing),
               ],
-              Text(
-                value,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: color ?? AppColors.primary,
-                  fontWeight: FontWeight.w700,
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: color ?? AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -220,7 +229,6 @@ class InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return ClayCard(
       padding: padding ?? const EdgeInsets.all(AppDimensions.cardPadding),
@@ -258,7 +266,7 @@ class _ClayButtonState extends State<ClayButton> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
 
-    final shadows = _isPressed
+    final List<BoxShadow> shadows = _isPressed
         ? (isDark
             ? []
             : [
@@ -293,6 +301,7 @@ class _ClayButtonState extends State<ClayButton> {
           color: widget.color ?? theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(
               widget.radius ?? AppDimensions.radiusMedium),
+          boxShadow: shadows,
         ),
         child: widget.child,
       ),

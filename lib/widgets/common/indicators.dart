@@ -207,13 +207,17 @@ class PhaseChip extends StatelessWidget {
             ),
             const SizedBox(width: AppDimensions.tinySpacing),
           ],
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: isActive
-                  ? color
-                  : theme.colorScheme.onSurface.withOpacity(0.6),
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isActive
+                    ? color
+                    : theme.colorScheme.onSurface.withOpacity(0.6),
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              ),
             ),
           ),
         ],

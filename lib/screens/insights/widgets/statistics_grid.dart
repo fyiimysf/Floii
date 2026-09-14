@@ -5,8 +5,6 @@ import 'dart:math';
 import 'package:floi/utils/extensions/localization_extension.dart';
 import 'package:flutter/material.dart';
 import '../../../services/cycle/cycle_calculation_service.dart';
-import '../../../utils/constants/colors.dart';
-
 import '../../../utils/constants/dimensions.dart';
 import '../../../widgets/common/cards.dart';
 
@@ -22,6 +20,7 @@ class StatisticsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final periods = stats['periods'] as List<List<DateTime>>? ?? [];
     final cycleLengths = _getCycleLengths(periods);
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,13 +32,15 @@ class StatisticsGrid extends StatelessWidget {
               ),
         ),
         const SizedBox(height: AppDimensions.elementSpacing),
-        GridView.count(
+        GridView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          childAspectRatio: 1.5,
-          mainAxisSpacing: AppDimensions.elementSpacing,
-          crossAxisSpacing: AppDimensions.elementSpacing,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisExtent: 96 * textScale + 40,
+            mainAxisSpacing: AppDimensions.elementSpacing,
+            crossAxisSpacing: AppDimensions.elementSpacing,
+          ),
           children: [
             MetricCard(
               title: context.tr('averageCycle'),

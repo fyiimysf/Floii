@@ -54,19 +54,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     }
   }
 
-  Future<void> _toggleTheme() async {
-    final box = Hive.box<Options>('options');
-    final currentOptions = box.get('theme') ?? Options(darkMode: true);
-    final newOptions = Options(darkMode: !currentOptions.darkMode);
-    await box.put('theme', newOptions);
-
-    if (mounted) {
-      setState(() {
-        _isDarkMode = newOptions.darkMode;
-      });
-    }
-  }
-
   @override
   void dispose() {
     _pageController.dispose();

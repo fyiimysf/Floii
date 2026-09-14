@@ -3,24 +3,39 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/cycle_models.dart';
 import '../../services/storage/storage_service.dart';
-import '../../services/localization/app_localizations.dart';
 import '../../services/localization/language_service.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
-import '../../utils/constants/strings.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../widgets/common/cards.dart';
+import '../../widgets/common/floating_tab_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  State<SettingsScreen> createState() => SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class SettingsScreenState extends State<SettingsScreen> {
   final StorageService _storage = StorageService();
   final LanguageService _languageService = LanguageService();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void scrollToTop() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
 
   Future<void> _deleteAllData() async {
     await _storage.clearAllData();
@@ -283,40 +298,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: CustomScrollView(
+        controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          SliverAppBar(
-            expandedHeight: 100,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: AppDimensions.tinySpacing,
-                children: [
-                  Icon(
-                    Icons.settings,
-                    color: AppColors.primary,
-                    size: AppDimensions.iconLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(context.tr('settings')),
-                ],
-              ),
-              centerTitle: true,
-            ),
+          FloatingTabBar(
+            title: context.tr('settings'),
+            accentColor: AppColors.primary,
+            showAction: false,
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(
                 horizontal: AppDimensions.screenPadding),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const SizedBox(height: AppDimensions.sectionSpacing * 2),
+                const SizedBox(height: AppDimensions.elementSpacing),
                 _buildSectionHeader(context, context.tr('general'), Icons.tune),
                 const SizedBox(height: AppDimensions.elementSpacing),
                 ClayCard(

@@ -49,13 +49,14 @@ class FertilityForecast extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.elementSpacing),
-          Row(
+          Wrap(
+            spacing: AppDimensions.elementSpacing * 2,
+            runSpacing: AppDimensions.smallSpacing,
             children: [
               FertilityIndicator(
                 label: '${context.tr('fertile')} ${context.tr('days')}',
                 color: AppColors.fertile,
               ),
-              const SizedBox(width: AppDimensions.elementSpacing * 2),
               FertilityIndicator(
                 label: '${context.tr('ovulationPhase')} ${context.tr('Day')}',
                 color: AppColors.ovulation,

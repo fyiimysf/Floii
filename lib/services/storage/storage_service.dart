@@ -87,4 +87,7 @@ class StorageService {
   String _dateToKey(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
+
+  /// Stable Hive key for a daily-data entry, shared with import/export.
+  String keyForDate(DateTime date) => _dateToKey(date);
 }

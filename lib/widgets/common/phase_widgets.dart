@@ -5,16 +5,17 @@ import '../../services/cycle/phase_service.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
 import 'cards.dart';
-import 'indicators.dart';
 
 class PhaseCard extends StatelessWidget {
   final PhaseDetail phase;
   final bool isCurrent;
+  final bool isCompleted;
 
   const PhaseCard({
     super.key,
     required this.phase,
     this.isCurrent = false,
+    this.isCompleted = false,
   });
 
   @override
@@ -22,13 +23,16 @@ class PhaseCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final color = PhaseService.getPhaseColor(phase.name);
+    final progress = PhaseService.calculatePhaseProgress(phase);
 
     return ClayCard(
-      color: !isCurrent ? null : color.withOpacity(0.1),
+      color: isCurrent ? color.withOpacity(0.1) : null,
       radius: AppDimensions.radiusMedium,
-      padding:
-          const EdgeInsets.symmetric(horizontal: AppDimensions.elementSpacing),
-      shadows: isDark || !isCurrent
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.smallSpacing,
+        vertical: AppDimensions.elementSpacing,
+      ),
+      shadows: isDark || isCompleted
           ? []
           : [
               BoxShadow(
@@ -37,212 +41,112 @@ class PhaseCard extends StatelessWidget {
                 offset: const Offset(0, 2),
               ),
             ],
-      child: SizedBox(
-        width: 90,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.smallSpacing),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                PhaseService.getPhaseIcon(phase.name),
-                color: color,
-                size: AppDimensions.iconLarge,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.tinySpacing),
-            Text(
-              phase.name,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            Text(
-              '${phase.duration} days',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class PhaseExpansionTile extends StatelessWidget {
-  final PhaseDetail phase;
-
-  const PhaseExpansionTile({
-    super.key,
-    required this.phase,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final color = PhaseService.getPhaseColor(phase.name);
-    final isCurrent = PhaseService.isDateInPhase(DateTime.now(), phase);
-    final daysRemaining = phase.endDate.difference(DateTime.now()).inDays;
-    final progress = PhaseService.calculatePhaseProgress(phase);
-
-    return ClayCard(
-      color: isCurrent ? color.withOpacity(0.05) : null,
-      radius: AppDimensions.radiusMedium,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.elementSpacing,
-        vertical: AppDimensions.smallSpacing,
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          dividerColor: Colors.transparent,
-        ),
-        child: ExpansionTile(
-          initiallyExpanded: isCurrent,
-          tilePadding: EdgeInsets.zero,
-          leading: Container(
-            padding: const EdgeInsets.all(AppDimensions.smallSpacing),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              PhaseService.getPhaseIcon(phase.name),
-              color: color,
-              size: AppDimensions.iconMedium,
-            ),
-          ),
-          title: Text(
-            phase.name,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          subtitle: Text(
-            '${_formatDate(phase.startDate)} - ${_formatDate(phase.endDate)}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          trailing: PhaseChip(
-            label: '${phase.duration}d',
-            color: color,
-            isActive: isCurrent,
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(
-                left: AppDimensions.cardPadding,
-                right: AppDimensions.cardPadding,
-                bottom: AppDimensions.elementSpacing,
-                top: AppDimensions.smallSpacing,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppDimensions.smallSpacing),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withOpacity(0.05)
-                          : theme.colorScheme.surfaceContainerHighest,
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusMedium),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.smallSpacing),
+                decoration: BoxDecoration(
+                  color: isCompleted
+                      ? theme.colorScheme.onSurface.withOpacity(0.06)
+                      : color.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      PhaseService.getPhaseIcon(phase.name),
+                      color: isCompleted
+                          ? theme.colorScheme.onSurface.withOpacity(0.35)
+                          : color,
+                      size: AppDimensions.iconLarge,
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusSmall),
-                            child: LinearProgressIndicator(
-                              value: progress,
-                              backgroundColor:
-                                  theme.colorScheme.onSurface.withOpacity(0.1),
-                              valueColor: AlwaysStoppedAnimation<Color>(color),
-                              minHeight: 10,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: AppDimensions.elementSpacing),
-                        Text(
-                          isCurrent
-                              ? '$daysRemaining ${context.tr('days')} ${context.tr("left")}'
-                              : '--',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: isCurrent
-                                ? color
-                                : theme.colorScheme.onSurface.withOpacity(0.5),
-                            fontWeight:
-                                isCurrent ? FontWeight.w600 : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.elementSpacing),
-                  Container(
-                    padding: const EdgeInsets.all(AppDimensions.elementSpacing),
+                  ],
+                ),
+              ),
+              if (isCompleted)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.05),
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusMedium),
+                      color: color,
+                      shape: BoxShape.circle,
                       border: Border.all(
-                        color: color.withOpacity(0.1),
+                        color: theme.colorScheme.surface,
+                        width: 2,
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb_outline,
-                          size: AppDimensions.iconSmall,
-                          color: color,
-                        ),
-                        const SizedBox(width: AppDimensions.smallSpacing),
-                        Expanded(
-                          child: Text(
-                            PhaseService.getPhaseDescription(
-                                phase.name, context),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.8),
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: const Icon(
+                      Icons.check,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.tinySpacing),
+          Text(
+            phase.name,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: isCompleted
+                  ? theme.colorScheme.onSurface.withOpacity(0.45)
+                  : color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.tinySpacing),
+          if (isCurrent)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.elementSpacing,
+              ),
+              child: Column(
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusSmall),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor:
+                          theme.colorScheme.onSurface.withOpacity(0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                      minHeight: 4,
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.tinySpacing),
+                  Text(
+                    '${phase.duration} ${context.tr('days')}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ],
               ),
+            )
+          else
+            Text(
+              '${phase.duration} ${context.tr('days')}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isCompleted
+                    ? theme.colorScheme.onSurface.withOpacity(0.35)
+                    : theme.colorScheme.onSurface.withOpacity(0.6),
+              ),
             ),
-          ],
-        ),
+        ],
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return '${months[date.month - 1]} ${date.day}';
   }
 }
 

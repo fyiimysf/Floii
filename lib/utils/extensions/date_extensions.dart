@@ -3,6 +3,10 @@ extension DateTimeExtension on DateTime {
     return year == other.year && month == other.month && day == other.day;
   }
 
+  bool isSameMonth(DateTime other) {
+    return year == other.year && month == other.month;
+  }
+
   bool isToday() {
     final now = DateTime.now();
     return isSameDate(now);

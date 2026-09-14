@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'app_text_scaling.dart';
 import 'models/cycle_models.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/insights/insights_screen.dart';
@@ -8,9 +9,9 @@ import 'screens/settings/settings_screen.dart';
 import 'screens/settings/help_faq_screen.dart';
 import 'screens/settings/about_screen.dart';
 import 'screens/settings/feedback_screen.dart';
+import 'screens/trends/trends_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/onboarding/app_wrapper.dart';
-import 'services/storage/storage_service.dart';
 import 'services/localization/app_localizations.dart';
 import 'services/localization/language_service.dart';
 import 'theme/app_theme.dart';
@@ -80,7 +81,7 @@ class _FloiiAppState extends State<FloiiApp> {
                 textDirection: _languageService.isRtl()
                     ? TextDirection.rtl
                     : TextDirection.ltr,
-                child: child!,
+                child: buildAppTextScaling(context, child),
               );
             },
             initialRoute: '/',
@@ -95,6 +96,12 @@ class _FloiiAppState extends State<FloiiApp> {
                 return InsightsScreen(stats: stats);
               },
               '/settings': (context) => const SettingsScreen(),
+              '/trends': (context) {
+                  final stats = ModalRoute.of(context)!.settings.arguments
+                          as Map<String, dynamic>? ??
+                      {};
+                  return TrendsScreen(stats: stats);
+                },
               '/help-faq': (context) => const HelpFaqScreen(),
               '/about': (context) => const AboutScreen(),
               '/feedback': (context) => const FeedbackScreen(),

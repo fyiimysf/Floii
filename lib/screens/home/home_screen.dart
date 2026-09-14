@@ -1,49 +1,76 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../models/cycle_models.dart';
 import '../../services/cycle/cycle_calculation_service.dart';
-import '../../services/cycle/prediction_service.dart';
-import '../../services/cycle/phase_service.dart';
 import '../../services/storage/storage_service.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
 import '../../utils/extensions/date_extensions.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../widgets/common/cards.dart';
-import '../../widgets/drawers/predictions_drawer.dart';
+import '../../widgets/common/floating_tab_bar.dart';
 import 'widgets/calendar_widget.dart';
 import 'widgets/cycle_status_card.dart';
-import 'widgets/phase_timeline.dart';
 import 'dialogs/period_editor_dialog.dart';
 import 'dialogs/menstrual_settings_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Map<String, dynamic>? stats;
+  final VoidCallback? onOpenInsights;
+
+  const HomeScreen({super.key, this.stats, this.onOpenInsights});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   final StorageService _storage = StorageService();
+  final ScrollController _scrollController = ScrollController();
   DateTime _currentMonth = DateTime.now();
+  int _monthPage = monthPageIndex(DateTime.now());
+  late final PageController _monthPageController;
   List<DateTime> _predictedPeriods = [];
+  Map<String, dynamic>? _lastStats;
 
   int get _menstrualDays => _storage.getMenstrualDays();
+
+  Map<String, dynamic> get _computedStats {
+    return CycleCalculationService.calculateStats(
+      _storage.getAllDailyData(),
+      defaultCycleLength: 28,
+      defaultPeriodLength: _menstrualDays,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
-    _calculatePredictions();
+    _monthPageController = PageController(initialPage: _monthPage);
+    _recomputePredictions();
   }
 
-  void _calculatePredictions() {
-    final stats = _getCycleStats();
+  @override
+  void dispose() {
+    _monthPageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void scrollToTop() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _recomputePredictions() {
+    final stats = widget.stats ?? _computedStats;
     final periods = stats['periods'] as List<List<DateTime>>;
 
     if (periods.isEmpty) {
       _predictedPeriods = [];
-      setState(() {});
       return;
     }
 
@@ -58,144 +85,132 @@ class _HomeScreenState extends State<HomeScreen> {
         (index) => lastPeriod.add(Duration(days: index)),
       ));
     }
-
-    setState(() {});
-  }
-
-  Map<String, dynamic> _getCycleStats() {
-    return CycleCalculationService.calculateStats(
-      _storage.getAllDailyData(),
-      defaultCycleLength: 28,
-      defaultPeriodLength: _menstrualDays,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final stats = _getCycleStats();
-    final periods = stats['periods'] as List<List<DateTime>>;
-    final theme = Theme.of(context);
+    final stats = widget.stats ?? _computedStats;
 
-    if (periods.isEmpty && _predictedPeriods.isNotEmpty) {
-      _predictedPeriods = [];
-    } else if (periods.isNotEmpty && _predictedPeriods.isEmpty) {
-      _calculatePredictions();
+    if (!identical(_lastStats, stats)) {
+      _lastStats = stats;
+      _recomputePredictions();
     }
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      drawer: PredictionsDrawer(
-        stats: stats,
-        menstrualDays: _menstrualDays,
-      ),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => Padding(
-            padding: const EdgeInsets.fromLTRB(6, 4, 0, 6),
-            child: ClayButton(
-              color: Colors.transparent,
-              onTap: () => Scaffold.of(context).openDrawer(),
-              padding: const EdgeInsets.all(10),
-              radius: AppDimensions.radiusMedium,
-              child: const Icon(
-                Icons.menu,
-                color: AppColors.primary,
-                size: 24,
+    final now = DateTime.now();
+    final isCurrentMonthShowing =
+        _currentMonth.year == now.year && _currentMonth.month == now.month;
+
+    return CustomScrollView(
+      controller: _scrollController,
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverAppBar.medium(
+          pinned: true,
+          snap: true,
+          floating: true,
+          expandedHeight: 90,
+          actions: [
+            // if (!isCurrentMonthShowing)
+            Visibility(
+              visible: !isCurrentMonthShowing,
+              child: Padding(
+                padding: const EdgeInsetsGeometry.symmetric(horizontal: 12.0),
+                child: IconButton(
+                  onPressed: _goToToday,
+                  tooltip: context.tr('Go to today'),
+                  icon: Icon(Icons.today),
+                  iconSize: 32,
+                ),
               ),
-            ),
-          ),
-        ),
-        leadingWidth: 70,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.spa_rounded,
-              color: AppColors.primary,
-              size: 22,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              context.tr('appName'),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
+            )
           ],
+          flexibleSpace: FlexibleSpaceBar(
+            // centerTitle: true,
+            title: Text(
+              'Floii',
+            ),
+            titlePadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: ClayButton(
-              color: Colors.transparent,
-              onTap: () => Navigator.pushNamed(context, '/settings'),
-              radius: AppDimensions.radiusMedium,
-              child: const Icon(
-                Icons.settings_rounded,
-                color: AppColors.primary,
-                size: 24,
-              ),
+        // FloatingTabBar(
+        //   title: context.tr('Floii'),
+        //   accentColor: AppColors.primary,
+        //   showAction: !isCurrentMonthShowing,
+        //   onAction: _goToToday,
+        //   actionLabel: context.tr('today'),
+        //   actionTooltip: context.tr('goToToday'),
+        // ),
+        const SliverToBoxAdapter(
+          child: SizedBox(height: AppDimensions.smallSpacing * 2),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.screenPadding / 1.5),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              children: [
+                CycleStatusCard(
+                  stats: stats,
+                  onTap: () => _showInsights(context, stats),
+                ),
+                const SizedBox(height: AppDimensions.elementSpacing),
+                CalendarWidget(
+                  currentMonth: _currentMonth,
+                  predictedPeriods: _predictedPeriods,
+                  stats: stats,
+                  pageController: _monthPageController,
+                  onPageChanged: _onMonthPageChanged,
+                  onPreviousMonth: () => _changeMonth(-1),
+                  onNextMonth: () => _changeMonth(1),
+                  onDateTap: _handleDateTap,
+                  onDateLongPress: _showPeriodEditor,
+                ),
+                const SizedBox(height: AppDimensions.sectionSpacing),
+              ],
             ),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.screenPadding),
-          child: Column(
-            children: [
-              const SizedBox(height: kToolbarHeight),
-              CycleStatusCard(
-                stats: stats,
-                onTap: () => _showInsights(context, stats),
-              ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              CalendarHeader(
-                currentMonth: _currentMonth,
-                onPreviousMonth: () => _changeMonth(-1),
-                onNextMonth: () => _changeMonth(1),
-              ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              CalendarWidget(
-                currentMonth: _currentMonth,
-                predictedPeriods: _predictedPeriods,
-                stats: stats,
-                onDateTap: _handleDateTap,
-                onDateLongPress: _showPeriodEditor,
-              ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              Divider(
-                height: 1,
-                indent: AppDimensions.buttonHeightSmall,
-                endIndent: AppDimensions.buttonHeightSmall,
-                color: theme.colorScheme.outline.withOpacity(0.2),
-              ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              if (stats['periods'] != null &&
-                  (stats['periods'] as List).isNotEmpty)
-                Builder(builder: (context) {
-                  final cycle = _getCurrentOrPredictedCycle(stats);
-                  if (cycle == null) return _buildEmptyState();
-                  return PhaseTimeline(
-                    stats: stats,
-                    currentCycle: cycle,
-                  );
-                })
-              else
-                _buildEmptyState(),
-              const SizedBox(height: AppDimensions.sectionSpacing * 2),
-            ],
-          ),
         ),
-      ),
+      ],
     );
   }
 
-  void _changeMonth(int delta) {
+  void _goToToday() {
+    final target = monthPageIndex(DateTime.now());
+    final current = _monthPageController.hasClients
+        ? (_monthPageController.page?.round() ?? _monthPage)
+        : _monthPage;
+    // Large jumps are unreliable when animated in a single flight (pages fly
+    // by too fast to settle). Snap the title for anything more than a screen
+    // or two; the calendar grid still animates into place.
+    if ((target - current).abs() > 6) {
+      _monthPageController.jumpToPage(target);
+    } else {
+      _animateToPage(target);
+    }
     setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + delta);
+      _currentMonth = DateTime.now();
+      _monthPage = target;
+    });
+    scrollToTop();
+  }
+
+  void _changeMonth(int delta) {
+    _animateToPage(_monthPage + delta);
+  }
+
+  void _animateToPage(int page) {
+    if (!_monthPageController.hasClients) return;
+    _monthPageController.animateToPage(
+      page,
+      duration: AppDimensions.durationBounce,
+      curve: AppDimensions.curveClay,
+    );
+  }
+
+  void _onMonthPageChanged(int index) {
+    setState(() {
+      _monthPage = index;
+      _currentMonth = monthFromPageIndex(index);
     });
   }
 
@@ -295,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -303,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(AppDimensions.elementSpacing),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -324,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 content,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: AppDimensions.sectionSpacing),
@@ -334,13 +349,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ClayButton(
                       onTap: () => Navigator.pop(context),
                       color: isDark
-                          ? Colors.white.withOpacity(0.05)
+                          ? Colors.white.withValues(alpha: 0.05)
                           : theme.colorScheme.surfaceContainerHighest,
                       child: Text(
                         context.tr('cancel'),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -351,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.pop(context);
                         onConfirm();
                       },
-                      color: iconColor.withOpacity(0.1),
+                      color: iconColor.withValues(alpha: 0.1),
                       child: Text(
                         confirmText,
                         style: TextStyle(
@@ -396,7 +409,8 @@ class _HomeScreenState extends State<HomeScreen> {
       data.isPeriod = true;
       _storage.saveDailyData(date, data);
     }
-    _calculatePredictions();
+    _recomputePredictions();
+    setState(() {});
   }
 
   void _removePeriod(DateTime startDate) {
@@ -408,109 +422,15 @@ class _HomeScreenState extends State<HomeScreen> {
         _storage.saveDailyData(date, data);
       }
     }
-    _calculatePredictions();
+    _recomputePredictions();
+    setState(() {});
   }
 
   void _showInsights(BuildContext context, Map<String, dynamic> stats) {
-    Navigator.pushNamed(context, '/insights', arguments: stats);
-  }
-
-  PredictedRange? _getCurrentOrPredictedCycle(Map<String, dynamic> stats) {
-    final periods = stats['periods'] as List<List<DateTime>>? ?? [];
-    if (periods.isEmpty) return null;
-
-    final lastPeriod = periods.last;
-    final averageCycle = stats['average'] as int? ?? 28;
-    final periodLength = stats['currentPeriodLength'] as int? ?? 5;
-    final lastPeriodStart = lastPeriod.first;
-    final lastPeriodEnd = lastPeriod.last;
-    final now = DateTime.now();
-
-    final daysSinceLastPeriod = now.difference(lastPeriodStart).inDays;
-
-    if (daysSinceLastPeriod <= averageCycle) {
-      return PredictedRange(
-        index: -1,
-        startDate: lastPeriodStart,
-        endDate: lastPeriodEnd,
-      );
+    if (widget.onOpenInsights != null) {
+      widget.onOpenInsights!();
+    } else {
+      Navigator.pushNamed(context, '/insights', arguments: stats);
     }
-
-    final cyclesPassed = daysSinceLastPeriod ~/ averageCycle;
-    final predictedCycleStart = lastPeriodStart.add(
-      Duration(days: cyclesPassed * averageCycle),
-    );
-    final predictedCycleEnd = predictedCycleStart.add(
-      Duration(days: periodLength - 1),
-    );
-
-    return PredictedRange(
-      index: cyclesPassed - 1,
-      startDate: predictedCycleStart,
-      endDate: predictedCycleEnd,
-    );
-  }
-
-  Widget _buildEmptyState() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Padding(
-      padding: const EdgeInsets.all(AppDimensions.screenPadding * 2),
-      child: ClayCard(
-        color: isDark
-            ? Colors.white.withOpacity(0.05)
-            : theme.colorScheme.surfaceContainerHighest,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(AppDimensions.elementSpacing),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.calendar_today,
-                size: AppDimensions.iconXL,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.elementSpacing),
-            Text(
-              context.tr('welcomeTitle'),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: AppDimensions.smallSpacing),
-            Text(
-              context.tr('welcomeSubtitle'),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: AppDimensions.sectionSpacing),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _askToStartPeriod(DateTime.now()),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: AppDimensions.elementSpacing),
-                ),
-                child: Text(
-                  context.tr('trackMyPeriod'),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: AppDimensions.fontLarge,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
