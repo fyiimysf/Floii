@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
+import 'entrance.dart';
 
 class ClayCard extends StatelessWidget {
   final Widget child;
@@ -10,6 +11,16 @@ class ClayCard extends StatelessWidget {
   final List<BoxShadow>? shadows;
   final VoidCallback? onTap;
 
+  /// Which beat of the page's entrance this card lands on, counting from zero.
+  ///
+  /// Null means the card does not animate at all. Opting in per card keeps the
+  /// entrance off screens that should stay put, and lets each page stagger its
+  /// own cards without hard-coded delays at every call site.
+  final int? entranceStep;
+
+  /// Gap between two neighbouring beats.
+  static const Duration stagger = Duration(milliseconds: 60);
+
   const ClayCard({
     super.key,
     required this.child,
@@ -18,6 +29,7 @@ class ClayCard extends StatelessWidget {
     this.radius,
     this.shadows,
     this.onTap,
+    this.entranceStep,
   });
 
   @override
@@ -30,14 +42,14 @@ class ClayCard extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                  color: AppColors.clayShadow.withOpacity(0.15),
+                  color: AppColors.clayShadow.withValues(alpha: 0.15),
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 ),
               ]);
 
     final card = Container(
-      padding: padding ?? const EdgeInsets.all(AppDimensions.cardPadding),
+      padding: padding ?? const EdgeInsets.all(AppDimensions.elementSpacing),
       decoration: BoxDecoration(
         color: color ?? theme.colorScheme.surface,
         borderRadius:
@@ -45,8 +57,8 @@ class ClayCard extends StatelessWidget {
         boxShadow: clayShadows,
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : AppColors.clayShadow.withOpacity(0.2),
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.clayShadow.withValues(alpha: 0.2),
           width: AppDimensions.borderThin,
         ),
       ),
@@ -56,14 +68,19 @@ class ClayCard extends StatelessWidget {
       ),
     );
 
-    if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: card,
-      );
-    }
+    final tappable =
+        onTap != null ? GestureDetector(onTap: onTap, child: card) : card;
 
-    return card;
+    // Animating here rather than at each call site keeps every card on a page
+    // consistent. It runs on mount only, so the rebuilds these screens do on
+    // every Hive write do not replay it.
+    final step = entranceStep;
+    if (step == null) return tappable;
+
+    return EntranceFadeRise(
+      delay: stagger * step,
+      child: tappable,
+    );
   }
 }
 
@@ -100,7 +117,7 @@ class MetricCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -111,7 +128,7 @@ class MetricCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(0),
                   decoration: BoxDecoration(
-                    color: (color ?? AppColors.primary).withOpacity(0.1),
+                    color: (color ?? AppColors.primary).withValues(alpha: 0.1),
                     borderRadius:
                         BorderRadius.circular(AppDimensions.radiusMedium),
                   ),
@@ -169,7 +186,7 @@ class StatCard extends StatelessWidget {
           ? []
           : [
               BoxShadow(
-                color: AppColors.shadow.withOpacity(0.08),
+                color: AppColors.shadow.withValues(alpha: 0.08),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -191,7 +208,7 @@ class StatCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -271,7 +288,7 @@ class _ClayButtonState extends State<ClayButton> {
             ? []
             : [
                 BoxShadow(
-                    color: AppColors.clayShadow.withOpacity(0.2),
+                    color: AppColors.clayShadow.withValues(alpha: 0.2),
                     blurRadius: 3,
                     offset: const Offset(1, 1),
                     spreadRadius: -1),
@@ -280,30 +297,34 @@ class _ClayButtonState extends State<ClayButton> {
             ? []
             : [
                 BoxShadow(
-                  color: AppColors.clayShadow.withOpacity(0.12),
+                  color: AppColors.clayShadow.withValues(alpha: 0.12),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
               ]);
 
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTap: widget.onTap,
-      child: Container(
-        padding: widget.padding ??
-            const EdgeInsets.symmetric(
-              horizontal: AppDimensions.cardPadding,
-              vertical: AppDimensions.elementSpacing,
-            ),
-        decoration: BoxDecoration(
-          color: widget.color ?? theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(
-              widget.radius ?? AppDimensions.radiusMedium),
-          boxShadow: shadows,
+    return Semantics(
+      button: true,
+      enabled: widget.onTap != null,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onTap,
+        child: Container(
+          padding: widget.padding ??
+              const EdgeInsets.symmetric(
+                horizontal: AppDimensions.cardPadding,
+                vertical: AppDimensions.elementSpacing,
+              ),
+          decoration: BoxDecoration(
+            color: widget.color ?? theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(
+                widget.radius ?? AppDimensions.radiusMedium),
+            boxShadow: shadows,
+          ),
+          child: widget.child,
         ),
-        child: widget.child,
       ),
     );
   }

@@ -157,6 +157,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     final Widget grid = _buildGrid(month, isPaged);
 
     Widget card = ClayCard(
+      entranceStep: 1,
       padding: const EdgeInsets.all(AppDimensions.calendarGridPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -269,7 +270,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       padding: const EdgeInsets.all(AppDimensions.smallSpacing),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
+            ? Colors.white.withValues(alpha: 0.05)
             : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
       ),
@@ -437,7 +438,7 @@ class _WeekdayHeader extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
+            ? Colors.white.withValues(alpha: 0.05)
             : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
       ),
@@ -448,7 +449,7 @@ class _WeekdayHeader extends StatelessWidget {
                   day,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     fontWeight: FontWeight.w700,
                   ),
                 ))
@@ -556,7 +557,7 @@ class _LegendItem extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             fontSize: 10,
           ),
         ),

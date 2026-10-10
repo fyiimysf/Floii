@@ -8,6 +8,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      pageTransitionsTheme: _pageTransitions,
       scaffoldBackgroundColor: AppColors.backgroundLight,
       primarySwatch: _createMaterialColor(AppColors.primary),
       fontFamily: 'Nunito',
@@ -41,7 +42,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
           side: BorderSide(
-            color: AppColors.clayShadow.withOpacity(0.5),
+            color: AppColors.clayShadow.withValues(alpha: 0.5),
             width: AppDimensions.borderThin,
           ),
         ),
@@ -54,7 +55,7 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: AppDimensions.cardElevationClay,
-          shadowColor: AppColors.primary.withOpacity(0.3),
+          shadowColor: AppColors.primary.withValues(alpha: 0.3),
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.cardPadding,
             vertical: AppDimensions.elementSpacing,
@@ -115,7 +116,7 @@ class AppTheme {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
           borderSide: BorderSide(
-            color: AppColors.clayShadow.withOpacity(0.3),
+            color: AppColors.clayShadow.withValues(alpha: 0.3),
             width: AppDimensions.borderThin,
           ),
         ),
@@ -134,7 +135,7 @@ class AppTheme {
           ),
         ),
         hintStyle: TextStyle(
-          color: AppColors.textMuted.withOpacity(0.6),
+          color: AppColors.textMuted.withValues(alpha: 0.6),
           fontSize: AppDimensions.fontMedium,
         ),
       ),
@@ -157,7 +158,7 @@ class AppTheme {
         activeTrackColor: AppColors.primary,
         inactiveTrackColor: AppColors.clayShadow,
         thumbColor: AppColors.primary,
-        overlayColor: AppColors.primary.withOpacity(0.2),
+        overlayColor: AppColors.primary.withValues(alpha: 0.2),
         trackHeight: 6,
         thumbShape: const RoundSliderThumbShape(
           enabledThumbRadius: 12,
@@ -165,19 +166,19 @@ class AppTheme {
         ),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.primary;
           }
           return Colors.white;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return AppColors.primaryLight;
           }
           return AppColors.clayShadow;
         }),
-        trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.cardLight,
@@ -263,6 +264,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      pageTransitionsTheme: _pageTransitions,
       scaffoldBackgroundColor: AppColors.backgroundDark,
       primarySwatch: _createMaterialColor(AppColors.primary),
       fontFamily: 'Nunito',
@@ -271,12 +273,10 @@ class AppTheme {
         secondary: AppColors.secondary,
         surface: AppColors.cardDark,
         surfaceContainerHighest: AppColors.cardDark,
-        background: AppColors.backgroundDark,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: Colors.white,
         onSurfaceVariant: Colors.white70,
-        onBackground: Colors.white,
         outline: Colors.white24,
         outlineVariant: Colors.white12,
         shadow: Colors.black,
@@ -302,7 +302,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
           side: BorderSide(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             width: AppDimensions.borderThin,
           ),
         ),
@@ -313,7 +313,7 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: AppDimensions.cardElevationClay,
-          shadowColor: AppColors.primary.withOpacity(0.3),
+          shadowColor: AppColors.primary.withValues(alpha: 0.3),
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.cardPadding,
             vertical: AppDimensions.elementSpacing,
@@ -325,7 +325,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Colors.white.withValues(alpha: 0.05),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.elementSpacing,
           vertical: AppDimensions.elementSpacing,
@@ -337,7 +337,7 @@ class AppTheme {
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
           borderSide: BorderSide(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             width: AppDimensions.borderThin,
           ),
         ),
@@ -349,7 +349,7 @@ class AppTheme {
           ),
         ),
         hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.4),
+          color: Colors.white.withValues(alpha: 0.4),
           fontSize: AppDimensions.fontMedium,
         ),
       ),
@@ -403,7 +403,10 @@ class AppTheme {
   static MaterialColor _createMaterialColor(Color color) {
     List<double> strengths = <double>[.05, .1, .2, .3, .4, .5, .6, .7, .8, .9];
     Map<int, Color> swatch = {};
-    final int r = color.red, g = color.green, b = color.blue;
+    final argb = color.toARGB32();
+    final r = (argb >> 16) & 0xFF;
+    final g = (argb >> 8) & 0xFF;
+    final b = argb & 0xFF;
 
     for (var strength in strengths) {
       final double ds = 0.5 - strength;
@@ -414,6 +417,57 @@ class AppTheme {
         1,
       );
     }
-    return MaterialColor(color.value, swatch);
+    return MaterialColor(color.toARGB32(), swatch);
+  }
+}
+
+/// Material 3's default push zooms the whole page. These clay cards read better
+/// arriving the way they do on a tab change, so every platform shares one
+/// transition and the motion stays the same wherever you came from.
+const PageTransitionsTheme _pageTransitions = PageTransitionsTheme(
+  builders: {
+    TargetPlatform.android: _FadeRisePageTransitionsBuilder(),
+    TargetPlatform.iOS: _FadeRisePageTransitionsBuilder(),
+    TargetPlatform.macOS: _FadeRisePageTransitionsBuilder(),
+    TargetPlatform.windows: _FadeRisePageTransitionsBuilder(),
+    TargetPlatform.linux: _FadeRisePageTransitionsBuilder(),
+    TargetPlatform.fuchsia: _FadeRisePageTransitionsBuilder(),
+  },
+);
+
+/// Fades a pushed page in while it rises a short way.
+///
+/// Mirrors the card entrance so moving into a page and arriving at its cards
+/// feel like one motion. Honours the OS "reduce motion" setting by dropping the
+/// transition entirely.
+class _FadeRisePageTransitionsBuilder extends PageTransitionsBuilder {
+  const _FadeRisePageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.04),
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
+      ),
+    );
   }
 }

@@ -1,5 +1,9 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../models/cycle_models.dart';
+import '../../models/enums.dart';
 import '../../services/cycle/cycle_calculation_service.dart';
 import '../../services/storage/storage_service.dart';
 import '../../utils/constants/colors.dart';
@@ -7,11 +11,11 @@ import '../../utils/constants/dimensions.dart';
 import '../../utils/extensions/date_extensions.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../widgets/common/cards.dart';
-import '../../widgets/common/floating_tab_bar.dart';
 import 'widgets/calendar_widget.dart';
 import 'widgets/cycle_status_card.dart';
 import 'dialogs/period_editor_dialog.dart';
 import 'dialogs/menstrual_settings_dialog.dart';
+import 'dialogs/mood_picker_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic>? stats;
@@ -28,6 +32,7 @@ class HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   DateTime _currentMonth = DateTime.now();
   int _monthPage = monthPageIndex(DateTime.now());
+  bool _statusCollapsed = false;
   late final PageController _monthPageController;
   List<DateTime> _predictedPeriods = [];
   Map<String, dynamic>? _lastStats;
@@ -37,7 +42,7 @@ class HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic> get _computedStats {
     return CycleCalculationService.calculateStats(
       _storage.getAllDailyData(),
-      defaultCycleLength: 28,
+      defaultCycleLength: _storage.getCycleLength(),
       defaultPeriodLength: _menstrualDays,
     );
   }
@@ -104,11 +109,15 @@ class HomeScreenState extends State<HomeScreen> {
       controller: _scrollController,
       physics: const BouncingScrollPhysics(),
       slivers: [
-        SliverAppBar.medium(
+        SliverAppBar(
           pinned: true,
-          snap: true,
-          floating: true,
-          expandedHeight: 90,
+          // snap: true,
+          // floating: true,
+          expandedHeight: 70,
+          stretch: true,
+          surfaceTintColor: Theme.of(context).colorScheme.primaryContainer,
+          backgroundColor: Colors.transparent,
+          // scrolledUnderElevation: 0,
           actions: [
             // if (!isCurrentMonthShowing)
             Visibility(
@@ -117,21 +126,37 @@ class HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsetsGeometry.symmetric(horizontal: 12.0),
                 child: IconButton(
                   onPressed: _goToToday,
-                  tooltip: context.tr('Go to today'),
-                  icon: Icon(Icons.today),
-                  iconSize: 32,
+                  tooltip: context.tr('goToToday'),
+                  icon: Icon(Icons.subdirectory_arrow_left_rounded),
+                  iconSize: 26,
                 ),
               ),
-            )
-          ],
-          flexibleSpace: FlexibleSpaceBar(
-            // centerTitle: true,
-            title: Text(
-              'Floii',
             ),
-            titlePadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pushNamed('/learn'),
+                tooltip: context.tr('learn'),
+                icon: const Icon(Icons.menu_book_rounded, size: 26),
+              ),
+            ),
+          ],
+          flexibleSpace: Skeleton.keep(
+            child: ClipRect(
+              child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: FlexibleSpaceBar(
+                    // centerTitle: true,
+                    title: Text(
+                      'Floii',
+                    ),
+                    titlePadding:
+                        EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  )),
+            ),
           ),
         ),
+
         // FloatingTabBar(
         //   title: context.tr('Floii'),
         //   accentColor: AppColors.primary,
@@ -140,18 +165,29 @@ class HomeScreenState extends State<HomeScreen> {
         //   actionLabel: context.tr('today'),
         //   actionTooltip: context.tr('goToToday'),
         // ),
-        const SliverToBoxAdapter(
-          child: SizedBox(height: AppDimensions.smallSpacing * 2),
-        ),
+        // const SliverToBoxAdapter(
+        //   child: SizedBox(height: AppDimensions.smallSpacing * 2),
+        // ),
         SliverPadding(
           padding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.screenPadding / 1.5),
           sliver: SliverToBoxAdapter(
             child: Column(
               children: [
-                CycleStatusCard(
-                  stats: stats,
-                  onTap: () => _showInsights(context, stats),
+                AnimatedSize(
+                  duration: AppDimensions.durationBounce,
+                  curve: AppDimensions.curveClay,
+                  alignment: Alignment.topCenter,
+                  child: CycleStatusCard(
+                    stats: stats,
+                    onTap: () => _showInsights(context, stats),
+                    collapsed: _statusCollapsed,
+                    currentMood: _storage.getMoodForDate(now),
+                    onMoodTap: _showMoodPicker,
+                    onToggleCollapsed: () => setState(() {
+                      _statusCollapsed = !_statusCollapsed;
+                    }),
+                  ),
                 ),
                 const SizedBox(height: AppDimensions.elementSpacing),
                 CalendarWidget(
@@ -174,6 +210,25 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _logMoodForToday(Mood mood) async {
+    await _storage.setMoodForDate(DateTime.now(), mood);
+    if (mounted) setState(() {});
+  }
+
+  /// Mood selection lives in its own sheet, opened from the status card's mood
+  /// button, instead of a permanent card in the scroll view.
+  Future<void> _showMoodPicker() async {
+    final mood = await showModalBottomSheet<Mood>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => MoodPickerSheet(
+        selected: _storage.getMoodForDate(DateTime.now()),
+      ),
+    );
+    if (mood != null) await _logMoodForToday(mood);
+  }
+
   void _goToToday() {
     final target = monthPageIndex(DateTime.now());
     final current = _monthPageController.hasClients
@@ -191,7 +246,7 @@ class HomeScreenState extends State<HomeScreen> {
       _currentMonth = DateTime.now();
       _monthPage = target;
     });
-    scrollToTop();
+    // scrollToTop();
   }
 
   void _changeMonth(int delta) {
@@ -239,8 +294,10 @@ class HomeScreenState extends State<HomeScreen> {
         enableDrag: false,
         builder: (context) => MenstrualSettingsDialog(
           initialDays: _menstrualDays,
-          onSave: (days) {
+          initialCycleLength: _storage.getCycleLength(),
+          onSave: (days, cycleLength) {
             _storage.setMenstrualDays(days);
+            _storage.setCycleLength(cycleLength);
             _markPeriodRange(date, days);
           },
         ),
@@ -302,83 +359,81 @@ class HomeScreenState extends State<HomeScreen> {
           ),
         ),
         padding: const EdgeInsets.all(AppDimensions.cardPadding),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
               ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              Container(
-                padding: const EdgeInsets.all(AppDimensions.elementSpacing),
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: AppDimensions.iconXL,
-                ),
+            ),
+            const SizedBox(height: AppDimensions.elementSpacing),
+            Container(
+              padding: const EdgeInsets.all(AppDimensions.elementSpacing),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              Text(
-                title,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: AppDimensions.iconXL,
               ),
-              const SizedBox(height: AppDimensions.smallSpacing),
-              Text(
-                content,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
+            ),
+            const SizedBox(height: AppDimensions.elementSpacing),
+            Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(height: AppDimensions.sectionSpacing),
-              Row(
-                children: [
-                  Expanded(
-                    child: ClayButton(
-                      onTap: () => Navigator.pop(context),
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.05)
-                          : theme.colorScheme.surfaceContainerHighest,
-                      child: Text(
-                        context.tr('cancel'),
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: AppDimensions.smallSpacing),
+            Text(
+              content,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.sectionSpacing),
+            Row(
+              children: [
+                Expanded(
+                  child: ClayButton(
+                    onTap: () => Navigator.pop(context),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : theme.colorScheme.surfaceContainerHighest,
+                    child: Text(
+                      context.tr('cancel'),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppDimensions.elementSpacing),
+                Expanded(
+                  child: ClayButton(
+                    onTap: () {
+                      Navigator.pop(context);
+                      onConfirm();
+                    },
+                    color: iconColor.withValues(alpha: 0.1),
+                    child: Text(
+                      confirmText,
+                      style: TextStyle(
+                        color: iconColor,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.elementSpacing),
-                  Expanded(
-                    child: ClayButton(
-                      onTap: () {
-                        Navigator.pop(context);
-                        onConfirm();
-                      },
-                      color: iconColor.withValues(alpha: 0.1),
-                      child: Text(
-                        confirmText,
-                        style: TextStyle(
-                          color: iconColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-            ],
-          ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppDimensions.elementSpacing),
+          ],
         ),
       ),
     );

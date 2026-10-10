@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart' as intl;
@@ -45,10 +47,11 @@ class CycleYearViewState extends State<CycleYearView> {
 
   int get _menstrualDays => _storage.getMenstrualDays();
 
-  Map<String, dynamic> get _currentStats => widget.stats ??
+  Map<String, dynamic> get _currentStats =>
+      widget.stats ??
       CycleCalculationService.calculateStats(
         _storage.getAllDailyData(),
-        defaultCycleLength: 28,
+        defaultCycleLength: _storage.getCycleLength(),
         defaultPeriodLength: _menstrualDays,
       );
 
@@ -72,11 +75,10 @@ class CycleYearViewState extends State<CycleYearView> {
       final renderObj = ctx.findRenderObject();
       if (renderObj == null) return;
       final viewport = RenderAbstractViewport.of(renderObj);
-      final target =
-          viewport.getOffsetToReveal(renderObj, 0.5).offset.clamp(
-                _scrollController.position.minScrollExtent,
-                _scrollController.position.maxScrollExtent,
-              );
+      final target = viewport.getOffsetToReveal(renderObj, 0.5).offset.clamp(
+            _scrollController.position.minScrollExtent,
+            _scrollController.position.maxScrollExtent,
+          );
       _scrollController.animateTo(
         target,
         duration: const Duration(milliseconds: 350),
@@ -119,7 +121,8 @@ class CycleYearViewState extends State<CycleYearView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => MonthDetailSheet(month: month, stats: _currentStats),
+      builder: (context) =>
+          MonthDetailSheet(month: month, stats: _currentStats),
     );
   }
 
@@ -144,20 +147,51 @@ class CycleYearViewState extends State<CycleYearView> {
       _recomputePredictions();
     }
 
-    final periods = (stats['periods'] as List<List<DateTime>>? ?? []).reversed
-        .toList();
+    final periods =
+        (stats['periods'] as List<List<DateTime>>? ?? []).reversed.toList();
 
     return CustomScrollView(
       controller: _scrollController,
       physics: const BouncingScrollPhysics(),
       slivers: [
         if (widget.showHeader)
-          FloatingTabBar(
-            title: context.tr('calendar'),
-            accentColor: AppColors.today,
-            onAction: _openYearPicker,
-            actionLabel: '$_year',
-            actionTooltip: context.tr('selectYear'),
+          // FloatingTabBar(
+          //   title: context.tr('calendar'),
+          //   accentColor: AppColors.today,
+          //   onAction: _openYearPicker,
+          //   actionLabel: '$_year',
+          //   actionTooltip: context.tr('selectYear'),
+          // ),
+          SliverAppBar(
+            // 1. Keeps the bar stuck to the top when scrolling
+            pinned: true,
+            expandedHeight: 70.0,
+            backgroundColor:
+                Theme.of(context).colorScheme.surface.withAlpha(180),
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            // backgroundColor: AppColors.cardDark.withAlpha(200),
+            actions: [
+              // IconButton(onPressed: _openYearPicker, icon: HugeIcon(icon:  HugeIcons.strokeRoundedCalendar03, color: AppColors.primary, size: 26,)),
+              TextButton(
+                  onPressed: _openYearPicker,
+                  child: Text(
+                    '$_year',
+                    style: TextStyle(color: AppColors.today),
+                  ))
+            ],
+            // 2. Optional: Adjusts how content collapses under the status bar
+            flexibleSpace: ClipRect(
+              child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                  child: FlexibleSpaceBar(
+                    // centerTitle: true,
+                    title: Text(
+                      context.tr('calendar'),
+                    ),
+                    centerTitle: true,
+                  )),
+            ),
           ),
         SliverPadding(
           padding: const EdgeInsets.symmetric(
@@ -255,8 +289,7 @@ class _YearPickerSheet extends StatelessWidget {
             child: GridView.builder(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.screenPadding),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 4,
                 mainAxisSpacing: AppDimensions.smallSpacing,
                 crossAxisSpacing: AppDimensions.smallSpacing,
@@ -296,9 +329,7 @@ class _YearPickerSheet extends StatelessWidget {
                           width: 6,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.white
-                                : AppColors.today,
+                            color: isSelected ? Colors.white : AppColors.today,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -404,6 +435,7 @@ class _MiniMonthCard extends StatelessWidget {
     }
 
     return ClayCard(
+      entranceStep: 0,
       onTap: onTap,
       padding: const EdgeInsets.all(AppDimensions.elementSpacing),
       child: Column(
@@ -521,7 +553,7 @@ class _MonthDetailSheetState extends State<MonthDetailSheet> {
   void _refresh() {
     _stats = CycleCalculationService.calculateStats(
       _storage.getAllDailyData(),
-      defaultCycleLength: 28,
+      defaultCycleLength: _storage.getCycleLength(),
       defaultPeriodLength: _menstrualDays,
     );
     _recomputePredictions();
@@ -552,8 +584,10 @@ class _MonthDetailSheetState extends State<MonthDetailSheet> {
         enableDrag: false,
         builder: (context) => MenstrualSettingsDialog(
           initialDays: _menstrualDays,
-          onSave: (days) {
+          initialCycleLength: _storage.getCycleLength(),
+          onSave: (days, cycleLength) {
             _storage.setMenstrualDays(days);
+            _storage.setCycleLength(cycleLength);
             _markPeriodRange(date, days);
           },
         ),
@@ -562,8 +596,8 @@ class _MonthDetailSheetState extends State<MonthDetailSheet> {
       ClayConfirmSheet.show(
         context,
         title: context.tr('startPeriod'),
-        content: context.trArgs(
-            'startPeriodMessage', {'date': date.format('MMM dd')}),
+        content: context
+            .trArgs('startPeriodMessage', {'date': date.format('MMM dd')}),
         icon: Icons.water_drop,
         iconColor: AppColors.period,
         confirmText: context.tr('confirm'),
@@ -655,8 +689,8 @@ class _MonthDetailSheetState extends State<MonthDetailSheet> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.3),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -668,7 +702,8 @@ class _MonthDetailSheetState extends State<MonthDetailSheet> {
                           color: theme.colorScheme.surfaceContainerHighest,
                           padding: const EdgeInsets.all(10),
                           radius: AppDimensions.radiusCircular,
-                          child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01,
+                          child: HugeIcon(
+                            icon: HugeIcons.strokeRoundedCancel01,
                             color: theme.colorScheme.onSurface,
                             size: AppDimensions.iconMedium,
                           ),
@@ -684,7 +719,8 @@ class _MonthDetailSheetState extends State<MonthDetailSheet> {
                     horizontal: AppDimensions.screenPadding),
                 child: Row(
                   children: [
-                    HugeIcon(icon: HugeIcons.strokeRoundedCalendar03,
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedCalendar03,
                       color: AppColors.primary,
                       size: 24,
                     ),
@@ -818,12 +854,21 @@ class _CycleTile extends StatelessWidget {
   const _CycleTile({required this.period});
 
   static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
-  String _fmt(DateTime d) =>
-      '${_months[d.month - 1]} ${d.day}, ${d.year}';
+  String _fmt(DateTime d) => '${_months[d.month - 1]} ${d.day}, ${d.year}';
 
   @override
   Widget build(BuildContext context) {
@@ -833,6 +878,7 @@ class _CycleTile extends StatelessWidget {
     final isOngoing = DateTime.now().isBetween(start, end);
 
     return ClayCard(
+      entranceStep: 0,
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.elementSpacing,
         vertical: AppDimensions.elementSpacing,
@@ -845,7 +891,8 @@ class _CycleTile extends StatelessWidget {
               color: AppColors.period.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: HugeIcon(icon: HugeIcons.strokeRoundedDroplet,
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedDroplet,
               color: AppColors.period,
               size: AppDimensions.iconMedium,
             ),
@@ -870,8 +917,7 @@ class _CycleTile extends StatelessWidget {
                     color: isOngoing
                         ? AppColors.period
                         : theme.colorScheme.onSurfaceVariant,
-                    fontWeight:
-                        isOngoing ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: isOngoing ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
               ],
@@ -925,6 +971,7 @@ class _MonthEventTile extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ClayCard(
+      entranceStep: 0,
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.elementSpacing,
         vertical: AppDimensions.elementSpacing,

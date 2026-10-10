@@ -80,7 +80,7 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
             ? []
             : [
                 BoxShadow(
-                  color: AppColors.shadow.withOpacity(0.2),
+                  color: AppColors.shadow.withValues(alpha: 0.2),
                   blurRadius: 24,
                   spreadRadius: 8,
                 ),
@@ -95,7 +95,7 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -133,7 +133,7 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
             Container(
               padding: const EdgeInsets.all(AppDimensions.smallSpacing),
               decoration: BoxDecoration(
-                color: AppColors.period.withOpacity(0.1),
+                color: AppColors.period.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -204,7 +204,7 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
                     end: Alignment.bottomCenter,
                     colors: [
                       theme.colorScheme.surface,
-                      theme.colorScheme.surface.withOpacity(0),
+                      theme.colorScheme.surface.withValues(alpha: 0),
                     ],
                   ),
                 ),
@@ -224,7 +224,7 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
                     end: Alignment.topCenter,
                     colors: [
                       theme.colorScheme.surface,
-                      theme.colorScheme.surface.withOpacity(0),
+                      theme.colorScheme.surface.withValues(alpha: 0),
                     ],
                   ),
                 ),
@@ -252,19 +252,20 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.period.withOpacity(0.15)
+              ? AppColors.period.withValues(alpha: 0.15)
               : isToday
-                  ? AppColors.today.withOpacity(0.12)
+                  ? AppColors.today.withValues(alpha: 0.12)
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
           border: isToday
-              ? Border.all(color: AppColors.today.withOpacity(0.5), width: 1)
+              ? Border.all(
+                  color: AppColors.today.withValues(alpha: 0.5), width: 1)
               : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
+            SizedBox(
               width: 36,
               child: Text(
                 '${date.day}',
@@ -284,14 +285,13 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
             Text(
               '${intl.DateFormat('EEE').format(date)}, ${intl.DateFormat('MMM').format(date)} ${date.year}',
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: isSelected || isToday
-                    ? FontWeight.w800
-                    : FontWeight.w600,
+                fontWeight:
+                    isSelected || isToday ? FontWeight.w800 : FontWeight.w600,
                 color: isSelected
                     ? AppColors.period
                     : isToday
                         ? AppColors.today
-                        : theme.colorScheme.onSurface.withOpacity(0.7),
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -306,7 +306,7 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
 
     return ClayCard(
       color: isDark
-          ? Colors.white.withOpacity(0.05)
+          ? Colors.white.withValues(alpha: 0.05)
           : theme.colorScheme.surfaceContainerHighest,
       padding: const EdgeInsets.all(AppDimensions.elementSpacing),
       child: Row(
@@ -315,7 +315,7 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
           Icon(
             Icons.timer,
             size: AppDimensions.iconSmall,
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           const SizedBox(width: AppDimensions.smallSpacing),
           Text(
@@ -353,19 +353,21 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
                         : isSelected
                             ? [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.3),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),
                               ]
                             : [
                                 BoxShadow(
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha: 0.8),
                                   blurRadius: 3,
                                   offset: const Offset(-2, -2),
                                 ),
                                 BoxShadow(
-                                  color: AppColors.clayShadow.withOpacity(0.3),
+                                  color: AppColors.clayShadow
+                                      .withValues(alpha: 0.3),
                                   blurRadius: 3,
                                   offset: const Offset(2, 2),
                                 ),

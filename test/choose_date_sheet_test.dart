@@ -42,12 +42,12 @@ void main() {
     final wheel = tester.widget<ListWheelScrollView>(
       find.byType(ListWheelScrollView),
     );
-    final delegate =
-        wheel.childDelegate as ListWheelChildBuilderDelegate;
+    final delegate = wheel.childDelegate as ListWheelChildBuilderDelegate;
     expect(
       delegate.childCount!,
       greaterThan(10000),
-      reason: 'the wheel must wrap over many century cycles for infinite scroll',
+      reason:
+          'the wheel must wrap over many century cycles for infinite scroll',
     );
 
     expect(find.text(rangeLabel(now, 5)), findsOneWidget);
@@ -69,8 +69,7 @@ void main() {
     });
 
     // Two items up the wheel -> start date moves +2 days.
-    await tester.drag(
-        find.byType(ListWheelScrollView), const Offset(0, -104));
+    await tester.drag(find.byType(ListWheelScrollView), const Offset(0, -104));
     await tester.pumpAndSettle();
 
     final expected = now.addDays(2);

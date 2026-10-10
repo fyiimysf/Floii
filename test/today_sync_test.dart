@@ -128,9 +128,8 @@ void main() {
     await tester.tap(find.text('TODAY'));
     await tester.pumpAndSettle();
 
-    final controller = tester
-        .state<_HarnessState>(find.byType(_Harness))
-        ._controller;
+    final controller =
+        tester.state<_HarnessState>(find.byType(_Harness))._controller;
     expect(controller.page?.round(), todayIndex,
         reason: 'title should settle on today');
     expect(changed.last, todayIndex, reason: 'last change should be today');

@@ -137,7 +137,7 @@ void main() {
     expect(find.text('Apr'), findsNothing);
     expect(tester.takeException(), isNull);
   });
-testWidgets('month title scales down instead of wrapping', (tester) async {
+  testWidgets('month title scales down instead of wrapping', (tester) async {
     tester.platformDispatcher.textScaleFactorTestValue = 1.6;
     addTearDown(
         () => tester.platformDispatcher.clearTextScaleFactorTestValue());

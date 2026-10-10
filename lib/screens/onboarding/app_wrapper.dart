@@ -1,5 +1,7 @@
+import 'package:floi/utils/constants/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../main_shell.dart';
 import 'onboarding_screen.dart';
 
@@ -32,9 +34,15 @@ class _AppWrapperState extends State<AppWrapper> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
+      return Scaffold(
+        body: Skeletonizer(
+          effect: ShimmerEffect(
+            baseColor: AppColors.clayShadow.withAlpha(100),
+            highlightColor: AppColors.lilac,
+            duration: const Duration(seconds: 3),
+          ),
+          // enabled: _isLoading,
+          child: MainShell(),
         ),
       );
     }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../models/cycle_models.dart';
 import '../services/cycle/cycle_calculation_service.dart';
 import '../services/cycle/period_log_service.dart';
@@ -9,6 +11,7 @@ import '../utils/constants/dimensions.dart';
 import '../utils/extensions/date_extensions.dart';
 import '../utils/extensions/localization_extension.dart';
 import '../widgets/common/cards.dart';
+import '../widgets/common/entrance.dart';
 import '../widgets/dialogs/clay_confirm_sheet.dart';
 import 'home/dialogs/choose_date_sheet.dart';
 import 'home/dialogs/menstrual_settings_dialog.dart';
@@ -43,7 +46,7 @@ class _MainShellState extends State<MainShell> {
     final storage = StorageService();
     return CycleCalculationService.calculateStats(
       storage.getAllDailyData(),
-      defaultCycleLength: 28,
+      defaultCycleLength: storage.getCycleLength(),
       defaultPeriodLength: storage.getMenstrualDays(),
     );
   }
@@ -73,6 +76,7 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _openAddCycle() async {
+    HapticFeedback.mediumImpact();
     final theme = Theme.of(context);
     final today = DateTime.now();
 
@@ -88,115 +92,115 @@ class _MainShellState extends State<MainShell> {
           ),
         ),
         padding: const EdgeInsets.all(AppDimensions.cardPadding),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
               ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              Container(
+            ),
+            const SizedBox(height: AppDimensions.elementSpacing),
+            Container(
                 padding: const EdgeInsets.all(AppDimensions.elementSpacing),
                 decoration: BoxDecoration(
                   color: AppColors.period.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedDroplet,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedDroplet,
                   color: AppColors.period,
                   size: AppDimensions.iconXL,
-                )
+                )),
+            const SizedBox(height: AppDimensions.elementSpacing),
+            Text(
+              context.tr('addCycle'),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              Text(
-                context.tr('addCycle'),
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
+            ),
+            const SizedBox(height: AppDimensions.smallSpacing),
+            Text(
+              context.trArgs(
+                  'startPeriodMessage', {'date': today.format('MMM dd')}),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.sectionSpacing),
+            SizedBox(
+              width: double.infinity,
+              child: ClayButton(
+                color: AppColors.period.withValues(alpha: 0.12),
+                radius: AppDimensions.radiusMedium,
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppDimensions.elementSpacing,
                 ),
-              ),
-              const SizedBox(height: AppDimensions.smallSpacing),
-              Text(
-                context.trArgs('startPeriodMessage',
-                    {'date': today.format('MMM dd')}),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-              const SizedBox(height: AppDimensions.sectionSpacing),
-              SizedBox(
-                width: double.infinity,
-                child: ClayButton(
-                  color: AppColors.period.withValues(alpha: 0.12),
-                  radius: AppDimensions.radiusMedium,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppDimensions.elementSpacing,
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    _logPeriodToday();
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      HugeIcon(icon: HugeIcons.strokeRoundedCalendar02,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _logPeriodToday();
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedCalendar02,
+                      color: AppColors.period,
+                      size: AppDimensions.iconMedium,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      context.tr('trackToday'),
+                      style: const TextStyle(
                         color: AppColors.period,
-                        size: AppDimensions.iconMedium,
+                        fontWeight: FontWeight.w700,
+                        fontSize: AppDimensions.fontMedium,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        context.tr('trackToday'),
-                        style: const TextStyle(
-                          color: AppColors.period,
-                          fontWeight: FontWeight.w700,
-                          fontSize: AppDimensions.fontMedium,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              SizedBox(
-                width: double.infinity,
-                child: ClayButton(
-                  color: AppColors.predicted.withValues(alpha: 0.12),
-                  radius: AppDimensions.radiusMedium,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppDimensions.elementSpacing,
-                  ),
-                  onTap: () {
-                    Navigator.pop(sheetContext);
-                    _pickDateThenLog();
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      HugeIcon(icon: HugeIcons.strokeRoundedCalendarAdd01,
+            ),
+            const SizedBox(height: AppDimensions.elementSpacing),
+            SizedBox(
+              width: double.infinity,
+              child: ClayButton(
+                color: AppColors.predicted.withValues(alpha: 0.12),
+                radius: AppDimensions.radiusMedium,
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppDimensions.elementSpacing,
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickDateThenLog();
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedCalendarAdd01,
+                      color: AppColors.predicted,
+                      size: AppDimensions.iconMedium,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      context.tr('chooseDate'),
+                      style: const TextStyle(
                         color: AppColors.predicted,
-                        size: AppDimensions.iconMedium,
+                        fontWeight: FontWeight.w700,
+                        fontSize: AppDimensions.fontMedium,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        context.tr('chooseDate'),
-                        style: const TextStyle(
-                          color: AppColors.predicted,
-                          fontWeight: FontWeight.w700,
-                          fontSize: AppDimensions.fontMedium,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-            ],
-          ),
+            ),
+            const SizedBox(height: AppDimensions.elementSpacing),
+          ],
         ),
       ),
     );
@@ -213,8 +217,10 @@ class _MainShellState extends State<MainShell> {
         backgroundColor: Colors.transparent,
         builder: (context) => MenstrualSettingsDialog(
           initialDays: storage.getMenstrualDays(),
-          onSave: (days) {
+          initialCycleLength: storage.getCycleLength(),
+          onSave: (days, cycleLength) {
             storage.setMenstrualDays(days);
+            storage.setCycleLength(cycleLength);
             PeriodLogService().markRange(now, days);
           },
         ),
@@ -223,8 +229,8 @@ class _MainShellState extends State<MainShell> {
       ClayConfirmSheet.show(
         context,
         title: context.tr('startPeriod'),
-        content: context.trArgs(
-            'startPeriodMessage', {'date': now.format('MMM dd')}),
+        content: context
+            .trArgs('startPeriodMessage', {'date': now.format('MMM dd')}),
         icon: Icons.water_drop,
         iconColor: AppColors.period,
         confirmText: context.tr('confirm'),
@@ -264,29 +270,43 @@ class _MainShellState extends State<MainShell> {
         final stats = _computeStats();
 
         return Scaffold(
-          body: SafeArea(
-            bottom: false,
-            child: IndexedStack(
-              index: _index,
-              children: [
-                HomeScreen(
+          // IndexedStack keeps every tab alive so switching costs nothing, but
+          // it also means the swap is instantaneous and lifeless. Each tab fades
+          // and rises on the way in; the wrapper keeps the tab's own state
+          // because it sits inside the retained child rather than replacing it.
+          body: IndexedStack(
+            index: _index,
+            children: [
+              EntranceOnActivate(
+                isActive: _index == 0,
+                child: HomeScreen(
                   key: _homeKey,
                   stats: stats,
                   onOpenInsights: () => _goTo(2),
                 ),
-                CycleYearView(key: _calendarKey, stats: stats, showHeader: true),
-                InsightsScreen(key: _insightsKey, stats: stats),
-                SettingsScreen(key: _settingsKey),
-              ],
-            ),
+              ),
+              EntranceOnActivate(
+                isActive: _index == 1,
+                child: CycleYearView(
+                    key: _calendarKey, stats: stats, showHeader: true),
+              ),
+              EntranceOnActivate(
+                isActive: _index == 2,
+                child: InsightsScreen(key: _insightsKey, stats: stats),
+              ),
+              EntranceOnActivate(
+                isActive: _index == 3,
+                child: SettingsScreen(key: _settingsKey),
+              ),
+            ],
           ),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerDocked,
           floatingActionButton: Padding(
-            padding: const EdgeInsets.only(top: 16),
+            padding: const EdgeInsets.only(top: 32),
             child: _AddCycleFab(onTap: _openAddCycle),
           ),
-          bottomNavigationBar: _buildBottomNav(theme),
+          bottomNavigationBar: Skeleton.keep(child: _buildBottomNav(theme)),
         );
       },
     );
@@ -308,33 +328,42 @@ class _MainShellState extends State<MainShell> {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _NavItem(
                 icon: HugeIcons.strokeRoundedHome06,
                 label: context.tr('home'),
-                accent: AppColors.primary,
+                accent: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.primaryDark
+                    : AppColors.primaryAccent,
                 selected: _index == 0,
                 onTap: () => _goTo(0),
               ),
               _NavItem(
                 icon: HugeIcons.strokeRoundedCalendar03,
                 label: context.tr('calendar'),
-                accent: AppColors.today,
+                accent: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.primaryDark
+                    : AppColors.primaryAccent,
                 selected: _index == 1,
                 onTap: () => _goTo(1),
               ),
-              const SizedBox(width: 76),
+              const SizedBox(width: 78),
               _NavItem(
                 icon: HugeIcons.strokeRoundedAnalytics02,
                 label: context.tr('insights'),
-                accent: AppColors.ovulation,
+                accent: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.primaryDark
+                    : AppColors.primaryAccent,
                 selected: _index == 2,
                 onTap: () => _goTo(2),
               ),
               _NavItem(
                 icon: HugeIcons.strokeRoundedSetting07,
                 label: context.tr('settings'),
-                accent: AppColors.mint,
+                accent: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.primaryDark
+                    : AppColors.primaryAccent,
                 selected: _index == 3,
                 onTap: () => _goTo(3),
               ),
@@ -356,31 +385,39 @@ class _AddCycleFab extends StatelessWidget {
     return Tooltip(
       message: context.tr('addCycle'),
       child: SizedBox(
-        width: 58,
-        height: 58,
+        width: 68,
+        height: 68,
         child: ClayButton(
           onTap: onTap,
-          color: AppColors.primary,
-          radius: 20,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.primaryDark
+              : AppColors.primaryAccent,
+          radius: 18,
           padding: EdgeInsets.zero,
           child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.35),
-                width: 2,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppColors.surfaceCream.withValues(alpha: 0.35),
+                  width: 4,
+                ),
               ),
-            ),
-            child: const HugeIcon(icon: HugeIcons.strokeRoundedPlusSign,
-              size: 30,
-              color: Colors.white,
-            )
-          ),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedPlusSign,
+                size: 10,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.surfaceCream.withValues(alpha: 0.85)
+                    : AppColors.surfaceLight,
+              )),
         ),
       ),
     );
   }
 }
+
+/// Height of a nav label box. Matches fontSize 12 at height 1.25, so labels sit
+/// on one line and every tab keeps the same total height.
+const double _kNavLabelHeight = 15;
 
 class _NavItem extends StatelessWidget {
   final List<List<dynamic>> icon;
@@ -399,10 +436,10 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dimColor = Theme.of(context)
-        .colorScheme
-        .onSurface
-        .withValues(alpha: 0.45);
+    final dimColor =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45);
+    final selectColor =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.75);
 
     return Expanded(
       child: InkWell(
@@ -418,30 +455,47 @@ class _NavItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
+                duration: const Duration(milliseconds: 380),
                 curve: Curves.easeOut,
                 width: 46,
-                height: 28,
+                height: selected ? 32 : 28,
                 decoration: BoxDecoration(
                   color: selected
-                      ? accent.withValues(alpha: 0.15)
+                      ? accent.withValues(alpha: 0.45)
                       : Colors.transparent,
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusCircular),
                 ),
                 child: HugeIcon(
                   icon: icon,
-                  size: 20,
-                  color: selected ? accent : dimColor,
+                  size: 30,
+                  color: selected ? selectColor : dimColor,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  color: selected ? accent : dimColor,
+              const SizedBox(height: 1),
+              // Fixed height, single line, shrink to fit. A label that wraps
+              // (German "Einstellungen" is long enough to) makes this item
+              // taller than its siblings, and because the bar centres items
+              // vertically that pushes this tab's icon up out of line with the
+              // others. Locking the box keeps every tab the same height, and
+              // scaling down means a long word is still readable rather than
+              // being cut off.
+              SizedBox(
+                height: _kNavLabelHeight,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.25,
+                      fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
+                      color: selected ? selectColor : dimColor,
+                    ),
+                  ),
                 ),
               ),
             ],

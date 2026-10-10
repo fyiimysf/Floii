@@ -10,6 +10,7 @@ import 'package:floi/screens/settings/settings_screen.dart';
 import 'package:floi/screens/settings/about_screen.dart';
 import 'package:floi/screens/settings/help_faq_screen.dart';
 import 'package:floi/screens/settings/feedback_screen.dart';
+import 'package:floi/screens/settings/notifications_screen.dart';
 import 'package:floi/screens/trends/trends_screen.dart';
 import 'package:floi/screens/calendar/calendar_year_view.dart';
 
@@ -63,6 +64,7 @@ void main() {
     'about': () => const AboutScreen(),
     'helpFaq': () => const HelpFaqScreen(),
     'feedback': () => const FeedbackScreen(),
+    'notifications': () => const NotificationsScreen(),
     'trends': () => TrendsScreen(stats: makeStats()),
   };
 
@@ -93,8 +95,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
-          data: const MediaQueryData()
-              .copyWith(textScaler: TextScaler.linear(2)),
+          data:
+              const MediaQueryData().copyWith(textScaler: TextScaler.linear(2)),
           child: Scaffold(body: InsightsScreen(stats: makeStats())),
         ),
       ),

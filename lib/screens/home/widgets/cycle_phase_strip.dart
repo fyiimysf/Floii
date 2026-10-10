@@ -52,7 +52,7 @@ class _CyclePhaseStripState extends State<CyclePhaseStrip> {
       ),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.05)
+            ? Colors.white.withValues(alpha: 0.05)
             : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
       ),
@@ -91,11 +91,16 @@ class _CyclePhaseStripState extends State<CyclePhaseStrip> {
                     ),
                   ),
                   const SizedBox(width: AppDimensions.elementSpacing),
-                  Text(
-                    '$daysLeft ${context.tr('days')} ${context.tr('left')}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                      fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: Text(
+                      '$daysLeft ${context.tr('days')} ${context.tr('left')}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(width: AppDimensions.smallSpacing),
@@ -106,7 +111,7 @@ class _CyclePhaseStripState extends State<CyclePhaseStrip> {
                     child: Icon(
                       Icons.expand_more,
                       size: AppDimensions.iconSmall + 2,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -195,7 +200,7 @@ class _CyclePhaseStripState extends State<CyclePhaseStrip> {
                 child: Text(
                   PhaseService.getPhaseDescription(current.name, context),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.8),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -264,15 +269,20 @@ class _PhaseDetailRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppDimensions.smallSpacing),
-        Text(
-          isCurrent
-              ? '${PhaseService.daysRemainingInPhase(phase) ?? 0} ${context.tr('days')} ${context.tr('left')}'
-              : '${phase.duration} ${context.tr('days')}',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: isCurrent
-                ? color
-                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+        Flexible(
+          child: Text(
+            isCurrent
+                ? '${PhaseService.daysRemainingInPhase(phase) ?? 0} ${context.tr('days')} ${context.tr('left')}'
+                : '${phase.duration} ${context.tr('days')}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isCurrent
+                  ? color
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+            ),
           ),
         ),
       ],
@@ -425,7 +435,7 @@ class _PhaseLabel extends StatelessWidget {
           style: theme.textTheme.bodySmall?.copyWith(
             color: isCurrent
                 ? color
-                : theme.colorScheme.onSurface.withOpacity(0.5),
+                : theme.colorScheme.onSurface.withValues(alpha: 0.5),
             fontSize: 10,
             fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500,
           ),

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
@@ -52,7 +50,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
           ),
-          backgroundColor: AppColors.success.withOpacity(0.9),
+          backgroundColor: AppColors.success.withValues(alpha: 0.9),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(AppDimensions.screenPadding),
           content: Row(
@@ -128,13 +126,14 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 Text(
                   context.tr('feedbackDescription'),
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: AppDimensions.sectionSpacing),
                 Form(
                   key: _formKey,
                   child: ClayCard(
+                    entranceStep: 0,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -163,7 +162,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                   color: isSelected
                                       ? AppColors.primary
                                       : isDark
-                                          ? Colors.white.withOpacity(0.05)
+                                          ? Colors.white.withValues(alpha: 0.05)
                                           : theme.colorScheme
                                               .surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(
@@ -285,14 +284,15 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 ),
                 const SizedBox(height: AppDimensions.sectionSpacing),
                 ClayCard(
-                  color: AppColors.primary.withOpacity(0.05),
+                  entranceStep: 1,
+                  color: AppColors.primary.withValues(alpha: 0.05),
                   child: Row(
                     children: [
                       Container(
                         padding:
                             const EdgeInsets.all(AppDimensions.elementSpacing),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -317,7 +317,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                               context.tr('weReadEveryFeedback'),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurface
-                                    .withOpacity(0.6),
+                                    .withValues(alpha: 0.6),
                               ),
                             ),
                           ],

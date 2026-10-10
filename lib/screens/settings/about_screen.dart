@@ -45,7 +45,7 @@ class AboutScreen extends StatelessWidget {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: ClipRRect(
@@ -68,7 +68,8 @@ class AboutScreen extends StatelessWidget {
                       Text(
                         AppStrings.appTagline,
                         style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -76,6 +77,7 @@ class AboutScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppDimensions.sectionSpacing * 2),
                 ClayCard(
+                  entranceStep: 0,
                   child: Column(
                     children: [
                       _buildInfoRow(
@@ -88,7 +90,7 @@ class AboutScreen extends StatelessWidget {
                       Divider(
                         height: 1,
                         indent: 0,
-                        color: theme.colorScheme.outline.withOpacity(0.2),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
                       ),
                       _buildInfoRow(
                         context,
@@ -109,6 +111,7 @@ class AboutScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppDimensions.elementSpacing),
                 ClayCard(
+                  entranceStep: 1,
                   child: Column(
                     children: [
                       _buildFeatureItem(
@@ -120,7 +123,7 @@ class AboutScreen extends StatelessWidget {
                       Divider(
                         height: 1,
                         indent: 0,
-                        color: theme.colorScheme.outline.withOpacity(0.2),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
                       ),
                       _buildFeatureItem(
                         context,
@@ -131,7 +134,7 @@ class AboutScreen extends StatelessWidget {
                       Divider(
                         height: 1,
                         indent: 0,
-                        color: theme.colorScheme.outline.withOpacity(0.2),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
                       ),
                       _buildFeatureItem(
                         context,
@@ -142,7 +145,7 @@ class AboutScreen extends StatelessWidget {
                       Divider(
                         height: 1,
                         indent: 0,
-                        color: theme.colorScheme.outline.withOpacity(0.2),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
                       ),
                       _buildFeatureItem(
                         context,
@@ -162,6 +165,7 @@ class AboutScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppDimensions.elementSpacing),
                 ClayCard(
+                  entranceStep: 2,
                   child: Column(
                     children: [
                       _buildCreditItem(
@@ -172,7 +176,7 @@ class AboutScreen extends StatelessWidget {
                       Divider(
                         height: 1,
                         indent: 0,
-                        color: theme.colorScheme.outline.withOpacity(0.2),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
                       ),
                       _buildCreditItem(
                         context,
@@ -187,7 +191,7 @@ class AboutScreen extends StatelessWidget {
                   child: Text(
                     '© 2026 ${AppStrings.appName}. All rights reserved.',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                   ),
                 ),
@@ -214,7 +218,7 @@ class AboutScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(AppDimensions.smallSpacing),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -226,7 +230,7 @@ class AboutScreen extends StatelessWidget {
       title: Text(
         label,
         style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
       trailing: Text(
@@ -251,7 +255,7 @@ class AboutScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(AppDimensions.smallSpacing),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
+          color: AppColors.primary.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -269,7 +273,7 @@ class AboutScreen extends StatelessWidget {
       subtitle: Text(
         description,
         style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
     );
@@ -287,7 +291,7 @@ class AboutScreen extends StatelessWidget {
       title: Text(
         title,
         style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
       trailing: Text(

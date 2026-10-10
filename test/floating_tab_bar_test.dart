@@ -67,7 +67,8 @@ void main() {
       (tester) async {
     setPhoneSize(tester, const Size(360, 640));
     tester.platformDispatcher.textScaleFactorTestValue = 1.3;
-    addTearDown(() => tester.platformDispatcher.clearTextScaleFactorTestValue());
+    addTearDown(
+        () => tester.platformDispatcher.clearTextScaleFactorTestValue());
 
     await tester.pumpWidget(harness());
     await tester.pumpAndSettle();

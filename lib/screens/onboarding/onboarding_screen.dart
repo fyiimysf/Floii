@@ -66,7 +66,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     await prefs.setBool('has_completed_onboarding', true);
 
     if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      Navigator.of(context).pushReplacementNamed('/');
     }
   }
 
@@ -185,8 +185,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       dotHeight: 05,
                       spacing: 10,
                       dotColor: _isDarkMode
-                          ? Colors.white.withOpacity(0.3)
-                          : Colors.black.withOpacity(0.2),
+                          ? Colors.white.withValues(alpha: 0.3)
+                          : Colors.black.withValues(alpha: 0.2),
                       activeDotColor: AppColors.primary,
                     ),
                   ),
@@ -274,8 +274,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                               borderRadius: BorderRadius.circular(40),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.period
-                                      .withOpacity(_isDarkMode ? 0.4 : 0.3),
+                                  color: AppColors.period.withValues(
+                                      alpha: _isDarkMode ? 0.4 : 0.3),
                                   blurRadius: 40,
                                   offset: const Offset(0, 20),
                                 ),
@@ -317,12 +317,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             const EdgeInsets.all(AppDimensions.cardPadding),
                         decoration: BoxDecoration(
                           color: _isDarkMode
-                              ? Colors.white.withOpacity(0.05)
-                              : AppColors.primary.withOpacity(0.05),
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : AppColors.primary.withValues(alpha: 0.05),
                           borderRadius:
                               BorderRadius.circular(AppDimensions.radiusLarge),
                           border: Border.all(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                             width: 0,
                           ),
                         ),
@@ -413,7 +413,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                               AppDimensions.elementSpacing),
                           decoration: BoxDecoration(
                             color: _isDarkMode
-                                ? Colors.white.withOpacity(0.05)
+                                ? Colors.white.withValues(alpha: 0.05)
                                 : Colors.grey.shade50,
                             borderRadius: BorderRadius.circular(
                                 AppDimensions.radiusMedium),
@@ -425,7 +425,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 height: 56,
                                 decoration: BoxDecoration(
                                   color: (feature['color'] as Color)
-                                      .withOpacity(0.15),
+                                      .withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(
                                       AppDimensions.radiusMedium),
                                 ),
@@ -464,7 +464,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),
@@ -498,7 +498,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         boxShadow: [
                           BoxShadow(
                             color: Colors.purple
-                                .withOpacity(_isDarkMode ? 0.4 : 0.3),
+                                .withValues(alpha: _isDarkMode ? 0.4 : 0.3),
                             blurRadius: 30,
                             offset: const Offset(0, 15),
                           ),
@@ -539,8 +539,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppColors.primary.withOpacity(0.1),
-                            AppColors.lilac.withOpacity(0.1),
+                            AppColors.primary.withValues(alpha: 0.1),
+                            AppColors.lilac.withValues(alpha: 0.1),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -640,7 +640,7 @@ class _LanguageSelectionModal extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: textColor.withOpacity(0.3),
+                color: textColor.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -685,15 +685,16 @@ class _LanguageSelectionModal extends StatelessWidget {
                             const EdgeInsets.all(AppDimensions.elementSpacing),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppColors.primary.withOpacity(0.1)
+                              ? AppColors.primary.withValues(alpha: 0.1)
                               : (isDarkMode
-                                  ? Colors.white.withOpacity(0.05)
+                                  ? Colors.white.withValues(alpha: 0.05)
                                   : Colors.grey.shade50),
                           borderRadius:
                               BorderRadius.circular(AppDimensions.radiusMedium),
                           border: isSelected
                               ? Border.all(
-                                  color: AppColors.primary.withOpacity(0.3),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.3),
                                   width: 2)
                               : null,
                         ),
@@ -706,7 +707,7 @@ class _LanguageSelectionModal extends StatelessWidget {
                                 color: isSelected
                                     ? AppColors.primary
                                     : (isDarkMode
-                                        ? Colors.white.withOpacity(0.1)
+                                        ? Colors.white.withValues(alpha: 0.1)
                                         : Colors.grey.shade200),
                                 borderRadius: BorderRadius.circular(
                                     AppDimensions.radiusMedium),
@@ -743,7 +744,7 @@ class _LanguageSelectionModal extends StatelessWidget {
                                     name,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: textColor.withOpacity(0.5),
+                                      color: textColor.withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ],

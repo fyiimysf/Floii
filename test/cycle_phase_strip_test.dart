@@ -5,8 +5,7 @@ import 'package:floi/screens/home/widgets/cycle_phase_strip.dart';
 
 Map<String, dynamic> cycleStats() {
   final today = DateTime.now();
-  final start =
-      DateTime(today.year, today.month, today.day - 10, 12);
+  final start = DateTime(today.year, today.month, today.day - 10, 12);
   return {
     'periods': [
       [start, start.add(const Duration(days: 4))],
@@ -17,8 +16,7 @@ Map<String, dynamic> cycleStats() {
 }
 
 void main() {
-  testWidgets('renders current phase header and phase labels',
-      (tester) async {
+  testWidgets('renders current phase header and phase labels', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

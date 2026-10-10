@@ -4,7 +4,7 @@ import '../../models/cycle_models.dart';
 import 'storage_service.dart';
 
 /// Builds and consumes the Floii JSON backup file:
-/// `{ app, version, exportedAt, menstrualDays, dailyData: [...] }`.
+/// `{ app, version, exportedAt, menstrualDays, cycleLength, dailyData: [...] }`.
 ///
 /// File I/O itself is handled by `file_picker` (save/pick), so this service
 /// stays platform-agnostic and works on mobile, desktop and web.
@@ -23,6 +23,7 @@ class BackupService {
       'version': _backupVersion,
       'exportedAt': DateTime.now().toIso8601String(),
       'menstrualDays': _storage.getMenstrualDays(),
+      'cycleLength': _storage.getCycleLength(),
       'dailyData': entries.map((d) {
         return {
           'date': d.date.toIso8601String(),
@@ -62,6 +63,7 @@ class BackupService {
     }).toList();
 
     final menstrualDays = (decoded['menstrualDays'] as num?)?.toInt();
+    final cycleLength = (decoded['cycleLength'] as num?)?.toInt();
 
     // Payload is valid; wipe current data, then restore.
     await _storage.clearAllData();
@@ -73,6 +75,10 @@ class BackupService {
 
     if (menstrualDays != null && menstrualDays > 0) {
       await _storage.setMenstrualDays(menstrualDays);
+    }
+
+    if (cycleLength != null && cycleLength >= 21 && cycleLength <= 40) {
+      await _storage.setCycleLength(cycleLength);
     }
 
     return restored.length;

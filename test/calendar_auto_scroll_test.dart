@@ -15,7 +15,10 @@ void main() {
             ? CycleYearView(key: key, stats: stats)
             : IndexedStack(
                 index: 0,
-                children: [const SizedBox(), CycleYearView(key: key, stats: stats)],
+                children: [
+                  const SizedBox(),
+                  CycleYearView(key: key, stats: stats)
+                ],
               ),
       ),
     );

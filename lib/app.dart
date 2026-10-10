@@ -3,17 +3,22 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'app_text_scaling.dart';
 import 'models/cycle_models.dart';
+import 'models/learn_topic.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/learn/learn_screen.dart';
+import 'screens/learn/learn_topic_screen.dart';
 import 'screens/insights/insights_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/settings/help_faq_screen.dart';
 import 'screens/settings/about_screen.dart';
 import 'screens/settings/feedback_screen.dart';
+import 'screens/settings/notifications_screen.dart';
 import 'screens/trends/trends_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/onboarding/app_wrapper.dart';
 import 'services/localization/app_localizations.dart';
 import 'services/localization/language_service.dart';
+import 'services/notifications/notification_service.dart';
 import 'theme/app_theme.dart';
 
 class FloiiApp extends StatefulWidget {
@@ -23,24 +28,40 @@ class FloiiApp extends StatefulWidget {
   State<FloiiApp> createState() => _FloiiAppState();
 }
 
-class _FloiiAppState extends State<FloiiApp> {
+class _FloiiAppState extends State<FloiiApp> with WidgetsBindingObserver {
   final LanguageService _languageService = LanguageService();
 
   @override
   void initState() {
     super.initState();
-    _languageService.init();
+    WidgetsBinding.instance.addObserver(this);
     _languageService.addListener(_onLanguageChanged);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _languageService.removeListener(_onLanguageChanged);
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      NotificationService().syncReminder().catchError((Object e) {
+        debugPrint('[Floii] Resume resync failed: $e');
+      });
+    }
+  }
+
   void _onLanguageChanged() {
     setState(() {});
+    // Alarm bodies are baked in the active language when the alarm is armed,
+    // so a language change only takes effect on already-armed reminders after
+    // a rebuild.
+    NotificationService().syncReminder().catchError((Object e) {
+      debugPrint('[Floii] Language-change resync failed: $e');
+    });
   }
 
   @override
@@ -97,14 +118,20 @@ class _FloiiAppState extends State<FloiiApp> {
               },
               '/settings': (context) => const SettingsScreen(),
               '/trends': (context) {
-                  final stats = ModalRoute.of(context)!.settings.arguments
-                          as Map<String, dynamic>? ??
-                      {};
-                  return TrendsScreen(stats: stats);
-                },
+                final stats = ModalRoute.of(context)!.settings.arguments
+                        as Map<String, dynamic>? ??
+                    {};
+                return TrendsScreen(stats: stats);
+              },
               '/help-faq': (context) => const HelpFaqScreen(),
+              '/learn': (context) => const LearnScreen(),
+              '/learn/topic': (context) => LearnTopicScreen(
+                    topic: ModalRoute.of(context)!.settings.arguments
+                        as LearnTopic,
+                  ),
               '/about': (context) => const AboutScreen(),
               '/feedback': (context) => const FeedbackScreen(),
+              '/notifications': (context) => const NotificationsScreen(),
             },
           ),
         );

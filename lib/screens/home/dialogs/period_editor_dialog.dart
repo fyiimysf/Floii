@@ -1,11 +1,13 @@
 import 'package:floi/utils/extensions/localization_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../models/enums.dart';
 import '../../../services/storage/storage_service.dart';
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/dimensions.dart';
 import '../../../utils/extensions/date_extensions.dart';
 import '../../../widgets/common/cards.dart';
+import 'mood_picker_sheet.dart';
 
 class PeriodEditorDialog extends StatefulWidget {
   final DateTime initialDate;
@@ -51,7 +53,7 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
             ? []
             : [
                 BoxShadow(
-                  color: AppColors.shadow.withOpacity(0.2),
+                  color: AppColors.shadow.withValues(alpha: 0.2),
                   blurRadius: 24,
                   spreadRadius: 8,
                 ),
@@ -65,7 +67,7 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withOpacity(0.3),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -75,6 +77,8 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
           _buildDaysGrid(),
           const SizedBox(height: AppDimensions.elementSpacing),
           _buildDurationControl(),
+          const SizedBox(height: AppDimensions.smallSpacing),
+          _buildMoodRow(),
           const SizedBox(height: AppDimensions.sectionSpacing),
           _buildActionButtons(),
           const SizedBox(height: AppDimensions.elementSpacing),
@@ -108,7 +112,7 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.period.withOpacity(0.1),
+                    color: AppColors.period.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -189,16 +193,16 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
                       AppDimensions.calendarDaySpacing * 2),
                   decoration: BoxDecoration(
                     color: isPeriod
-                        ? AppColors.period.withOpacity(0.15)
+                        ? AppColors.period.withValues(alpha: 0.15)
                         : isDark
-                            ? Colors.white.withOpacity(0.05)
+                            ? Colors.white.withValues(alpha: 0.05)
                             : theme.colorScheme.surfaceContainerHighest,
                     borderRadius:
                         BorderRadius.circular(AppDimensions.radiusMedium),
                     border: Border.all(
                       color: isPeriod
                           ? AppColors.period
-                          : theme.colorScheme.outline.withOpacity(0.2),
+                          : theme.colorScheme.outline.withValues(alpha: 0.2),
                       width: isPeriod ? 2 : 1,
                     ),
                     boxShadow: isDark
@@ -206,19 +210,21 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
                         : isPeriod
                             ? [
                                 BoxShadow(
-                                  color: AppColors.period.withOpacity(0.3),
+                                  color:
+                                      AppColors.period.withValues(alpha: 0.3),
                                   blurRadius: 6,
                                   offset: const Offset(0, 2),
                                 ),
                               ]
                             : [
                                 BoxShadow(
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha: 0.8),
                                   blurRadius: 3,
                                   offset: const Offset(-2, -2),
                                 ),
                                 BoxShadow(
-                                  color: AppColors.clayShadow.withOpacity(0.3),
+                                  color: AppColors.clayShadow
+                                      .withValues(alpha: 0.3),
                                   blurRadius: 3,
                                   offset: const Offset(2, 2),
                                 ),
@@ -252,8 +258,8 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
                                   ? []
                                   : [
                                       BoxShadow(
-                                        color:
-                                            AppColors.period.withOpacity(0.4),
+                                        color: AppColors.period
+                                            .withValues(alpha: 0.4),
                                         blurRadius: 4,
                                       ),
                                     ],
@@ -277,7 +283,7 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
 
     return ClayCard(
       color: isDark
-          ? Colors.white.withOpacity(0.05)
+          ? Colors.white.withValues(alpha: 0.05)
           : theme.colorScheme.surfaceContainerHighest,
       padding: const EdgeInsets.all(AppDimensions.elementSpacing),
       child: Row(
@@ -286,7 +292,7 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
           Icon(
             Icons.timer,
             size: AppDimensions.iconSmall,
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
           const SizedBox(width: AppDimensions.smallSpacing),
           Text(
@@ -324,19 +330,21 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
                         : isSelected
                             ? [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.3),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),
                               ]
                             : [
                                 BoxShadow(
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha: 0.8),
                                   blurRadius: 3,
                                   offset: const Offset(-2, -2),
                                 ),
                                 BoxShadow(
-                                  color: AppColors.clayShadow.withOpacity(0.3),
+                                  color: AppColors.clayShadow
+                                      .withValues(alpha: 0.3),
                                   blurRadius: 3,
                                   offset: const Offset(2, 2),
                                 ),
@@ -360,6 +368,76 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
     );
   }
 
+  Widget _buildMoodRow() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final storage = StorageService();
+    final currentMood = storage.getMoodForDate(startDate);
+
+    return ClayCard(
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.05)
+          : theme.colorScheme.surfaceContainerHighest,
+      padding: const EdgeInsets.all(AppDimensions.elementSpacing),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.mood,
+            size: AppDimensions.iconSmall,
+            color: AppColors.secondary,
+          ),
+          const SizedBox(width: AppDimensions.smallSpacing),
+          Text(
+            context.tr('mood'),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: AppDimensions.elementSpacing),
+          if (currentMood != null) ...[
+            Icon(
+              currentMood.icon,
+              size: 28,
+              color: AppColors.secondary,
+            ),
+            const SizedBox(width: AppDimensions.smallSpacing),
+          ],
+          ClayButton(
+            onTap: () => _pickMood(currentMood),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.elementSpacing,
+              vertical: AppDimensions.smallSpacing,
+            ),
+            color: AppColors.secondary.withValues(alpha: 0.15),
+            child: Text(
+              currentMood == null
+                  ? context.tr('addMood')
+                  : context.tr('changeMood'),
+              style: TextStyle(
+                color: AppColors.secondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickMood(Mood? current) async {
+    final mood = await showModalBottomSheet<Mood>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => MoodPickerSheet(selected: current),
+    );
+    if (mood != null) {
+      await StorageService().setMoodForDate(startDate, mood);
+      if (mounted) setState(() {});
+    }
+  }
+
   Widget _buildActionButtons() {
     return Row(
       children: [
@@ -369,7 +447,7 @@ class _PeriodEditorDialogState extends State<PeriodEditorDialog> {
               widget.onClear(startDate);
               Navigator.pop(context);
             },
-            color: AppColors.error.withOpacity(0.1),
+            color: AppColors.error.withValues(alpha: 0.1),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

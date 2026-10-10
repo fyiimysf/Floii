@@ -5,7 +5,6 @@ import 'package:floi/utils/extensions/localization_extension.dart';
 import 'package:flutter/material.dart';
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/dimensions.dart';
-import '../../../widgets/common/cards.dart';
 
 /// Shows cycle-length drift over the last few cycles as an annotated
 /// sparkline with the average reference line.
@@ -27,118 +26,114 @@ class CycleLengthChart extends StatelessWidget {
         .toList();
     final values = series;
 
-    final avg = averageCycle ??
-        (trends['avgCycle'] as num?)?.toDouble() ??
-        28.0;
+    final avg =
+        averageCycle ?? (trends['avgCycle'] as num?)?.toDouble() ?? 28.0;
 
-    return ClayCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
                 padding: const EdgeInsets.all(AppDimensions.elementSpacing),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusMedium),
                 ),
-                child: HugeIcon(icon: HugeIcons.strokeRoundedChartIncrease,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedChartIncrease,
                   color: theme.colorScheme.primary,
                   size: AppDimensions.iconMedium,
-                )
-              ),
-              const SizedBox(width: AppDimensions.elementSpacing),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.tr('cycleTrend'),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                )),
+            const SizedBox(width: AppDimensions.elementSpacing),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('cycleTrend'),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
-                    Text(
-                      context.tr('cycleTrendCaption'),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                  ),
+                  Text(
+                    context.tr('cycleTrendCaption'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppDimensions.smallSpacing),
-              _LegendDot(
-                color: theme.colorScheme.primary,
-                label: context.tr('yourCycle'),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.elementSpacing),
-          Text(
-            '${values.isEmpty ? 0 : values.last.round()} ${context.tr('days')}',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+            ),
+            const SizedBox(width: AppDimensions.smallSpacing),
+            _LegendDot(
               color: theme.colorScheme.primary,
+              label: context.tr('yourCycle'),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.elementSpacing),
+        Text(
+          '${values.isEmpty ? 0 : values.last.round()} ${context.tr('days')}',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: AppDimensions.smallSpacing),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+          child: SizedBox(
+            height: 120,
+            width: double.infinity,
+            child: CustomPaint(
+              painter: _TrendPainter(
+                values: values,
+                average: avg,
+                lineColor: theme.colorScheme.primary,
+                avgColor: AppColors.secondary,
+              ),
             ),
           ),
-          const SizedBox(height: AppDimensions.smallSpacing),
-          ClipRRect(
-            borderRadius:
-                BorderRadius.circular(AppDimensions.radiusMedium),
-            child: SizedBox(
-              height: 120,
-              width: double.infinity,
-              child: CustomPaint(
-                painter: _TrendPainter(
-                  values: values,
-                  average: avg,
-                  lineColor: theme.colorScheme.primary,
-                  avgColor: AppColors.secondary,
+        ),
+        const SizedBox(height: AppDimensions.smallSpacing),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                context.tr('earliest'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: AppDimensions.smallSpacing),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  context.tr('earliest'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.smallSpacing),
+              child: _LegendDot(
+                color: AppColors.secondary,
+                label: '${context.tr('averageCycle')} ${avg.round()}',
+                dashed: true,
+              ),
+            ),
+            Expanded(
+              child: Text(
+                context.tr('latest'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.smallSpacing),
-                child: _LegendDot(
-                  color: AppColors.secondary,
-                  label: '${context.tr('averageCycle')} ${avg.round()}',
-                  dashed: true,
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  context.tr('latest'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

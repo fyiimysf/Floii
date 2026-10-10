@@ -28,10 +28,12 @@ class PhaseService {
         final ovulationDay = averageCycle - 14;
 
         if (daysIntoPredictedCycle < 5) return CyclePhase.menstrual;
-        if (daysIntoPredictedCycle < ovulationDay - 1)
+        if (daysIntoPredictedCycle < ovulationDay - 1) {
           return CyclePhase.follicular;
-        if (daysIntoPredictedCycle <= ovulationDay + 1)
+        }
+        if (daysIntoPredictedCycle <= ovulationDay + 1) {
           return CyclePhase.ovulation;
+        }
         return CyclePhase.luteal;
       }
     }
@@ -248,8 +250,9 @@ class PhaseService {
   static int? daysRemainingInPhase(PhaseDetail phase) {
     final now = DateTime.now();
     if (now.isAfter(phase.endDate)) return 0;
-    if (now.isBefore(phase.startDate))
+    if (now.isBefore(phase.startDate)) {
       return phase.endDate.difference(phase.startDate).inDays + 1;
+    }
     return phase.endDate.difference(now).inDays + 1;
   }
 }

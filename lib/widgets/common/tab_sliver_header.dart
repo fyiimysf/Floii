@@ -75,8 +75,7 @@ class TabSliverHeader extends StatelessWidget {
                 onPressed: onAction,
                 icon: Icon(actionIcon!, size: 22),
                 style: IconButton.styleFrom(
-                  backgroundColor:
-                      accentColor.withValues(alpha: 0.08),
+                  backgroundColor: accentColor.withValues(alpha: 0.08),
                   foregroundColor: accentColor,
                 ),
               ),

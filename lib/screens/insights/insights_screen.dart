@@ -1,15 +1,19 @@
-import 'package:flutter/material.dart' hide ProgressIndicator;
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import '../../models/cycle_models.dart';
 import '../../services/cycle/cycle_calculation_service.dart';
 import '../../services/cycle/phase_service.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
 import '../../utils/extensions/localization_extension.dart';
-import '../../widgets/common/cards.dart';
-import '../../widgets/common/floating_tab_bar.dart';
-import '../../widgets/common/indicators.dart';
+import '../../widgets/common/dashboard_surface.dart';
+import 'widgets/cycle_now_card.dart';
 import 'widgets/fertility_forecast.dart';
+import 'widgets/mood_history_card.dart';
 import 'widgets/phase_breakdown.dart';
 import 'widgets/statistics_grid.dart';
+import 'widgets/week_forecast_card.dart';
 
 class InsightsScreen extends StatefulWidget {
   final Map<String, dynamic> stats;
@@ -36,6 +40,32 @@ class InsightsScreenState extends State<InsightsScreen> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
+  }
+
+  PredictedRange? _currentCycle(Map<String, dynamic> stats) {
+    final currentCycle =
+        CycleCalculationService.getCurrentCycle(stats['periods'] ?? []);
+    if (currentCycle == null) return null;
+
+    final averageCycle = stats['average'] as int? ?? 28;
+    final now = DateTime.now();
+    final daysSinceLastPeriod = now.difference(currentCycle.startDate).inDays;
+
+    if (daysSinceLastPeriod >= averageCycle) {
+      final cyclesPassed = daysSinceLastPeriod ~/ averageCycle;
+      final predictedCycleStart = currentCycle.startDate.add(
+        Duration(days: cyclesPassed * averageCycle),
+      );
+      return PredictedRange(
+        index: cyclesPassed - 1,
+        startDate: predictedCycleStart,
+        endDate: predictedCycleStart.add(
+          Duration(days: (stats['currentPeriodLength'] as int? ?? 5) - 1),
+        ),
+      );
+    }
+
+    return currentCycle;
   }
 
   DateTime? _getCurrentPrediction(Map<String, dynamic> stats) {
@@ -67,51 +97,127 @@ class InsightsScreenState extends State<InsightsScreen> {
   Widget build(BuildContext context) {
     final stats = widget.stats;
     final prediction = _getCurrentPrediction(stats);
-    final phaseName = PhaseService.getPhaseName(DateTime.now(), stats);
-    final phaseColor = PhaseService.getPhaseColor(phaseName);
+    final periods = stats['periods'] as List<List<DateTime>>? ?? [];
+
+    final cycle = _currentCycle(stats);
+    final phases = cycle == null
+        ? const <PhaseDetail>[]
+        : PhaseService.calculatePhaseDetails(cycle, stats);
+    final cycleStart = cycle?.startDate;
+
+    final currentCycleDay = cycleStart != null
+        ? DateTime.now().difference(cycleStart).inDays + 1
+        : CycleCalculationService.getCurrentCycleDay(
+            periods,
+            averageCycleLength: stats['average'] ?? 28,
+          );
+
     final currentPhase =
-        PhaseService.getPhaseDisplay(DateTime.now(), stats, context);
-    final cycleProgress = CycleCalculationService.calculateProgress(
-      stats['periods'] ?? [],
-      stats['average'] ?? 28,
-    );
-    final currentCycleDay = CycleCalculationService.getCurrentCycleDay(
-      stats['periods'] ?? [],
-      averageCycleLength: stats['average'] ?? 28,
-    );
-    final daysUntil = prediction?.difference(DateTime.now()).inDays;
+        cycle != null ? PhaseService.getCurrentPhase(phases) : null;
+    final phaseName =
+        currentPhase?.name ?? PhaseService.getPhaseName(DateTime.now(), stats);
+    final phaseColor = PhaseService.getPhaseColor(phaseName);
+    final currentPhaseDisplay = currentPhase != null
+        ? _phaseDisplayName(currentPhase.name, context)
+        : PhaseService.getPhaseDisplay(DateTime.now(), stats, context);
+    final phaseHint = context.tr('${phaseName.toLowerCase()}Hint');
 
     return Scaffold(
       body: CustomScrollView(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          FloatingTabBar(
-            title: context.tr('insights'),
-            accentColor: AppColors.ovulation,
-            onAction: _openTrends,
-            actionLabel: context.tr('trends'),
-            actionTooltip: context.tr('viewTrends'),
+          // FloatingTabBar(
+          //   title: context.tr('insights'),
+          //   accentColor: AppColors.ovulation,
+          //   onAction: _openTrends,
+          //   actionLabel: context.tr('trends'),
+          //   actionTooltip: context.tr('viewTrends'),
+          // ),
+
+          SliverAppBar(
+            // 1. Keeps the bar stuck to the top when scrolling
+            pinned: true,
+            expandedHeight: 70.0,
+            backgroundColor:
+                Theme.of(context).colorScheme.surface.withAlpha(180),
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            // backgroundColor: AppColors.cardDark.withAlpha(200),
+            actions: [
+              IconButton(
+                onPressed: _openTrends,
+                icon: Icon(
+                  Icons.show_chart_rounded,
+                  color: AppColors.ovulation,
+                  size: 26,
+                ),
+              ),
+              // IconButton(onPressed: _openYearPicker, icon: HugeIcon(icon:  HugeIcons.strokeRoundedCalendar03, color: AppColors.primary, size: 26,)),
+              // TextButton(
+              //     onPressed: _openTrends,
+              //     child: Text(
+              //       'Trends',
+              //       style: TextStyle(color: AppColors.ovulation, fontSize: 16, fontWeight: FontWeight.w600),
+              //     ))
+            ],
+            // 2. Optional: Adjusts how content collapses under the status bar
+            flexibleSpace: ClipRect(
+              child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                  child: FlexibleSpaceBar(
+                    // centerTitle: true,
+                    title: Text(
+                      context.tr('insights'),
+                    ),
+                    centerTitle: true,
+                  )),
+            ),
           ),
           const SliverToBoxAdapter(
             child: SizedBox(height: AppDimensions.smallSpacing),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.screenPadding),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildProgressCard(cycleProgress, currentPhase, phaseColor,
-                    stats, context, currentCycleDay, daysUntil),
-                const SizedBox(height: AppDimensions.smallSpacing),
-                StatisticsGrid(stats: stats),
-                const SizedBox(height: AppDimensions.smallSpacing),
-                PhaseBreakdown(stats: stats),
-                const SizedBox(height: AppDimensions.sectionSpacing),
-                if (prediction != null)
-                  FertilityForecast(prediction: prediction),
-                const SizedBox(height: AppDimensions.sectionSpacing),
-              ]),
+                horizontal: AppDimensions.borderMedium),
+            sliver: SliverToBoxAdapter(
+              child: DashboardSurface(
+                children: [
+                  CycleNowCard(
+                    stats: stats,
+                    phases: phases,
+                    cycleStart: cycleStart ?? DateTime.now(),
+                    currentPhase: currentPhaseDisplay,
+                    phaseHint: phaseHint,
+                    phaseColor: phaseColor,
+                    cycleDay: currentCycleDay,
+                    prediction: prediction,
+                  ),
+                  const DashboardSectionDivider(),
+                  dashboardSectionBlock(
+                      context, WeekForecastCard(stats: stats)),
+                  const DashboardSectionDivider(),
+                  dashboardSectionBlock(context, StatisticsGrid(stats: stats)),
+                  const DashboardSectionDivider(),
+                  dashboardSectionBlock(context, PhaseBreakdown(stats: stats)),
+                  const DashboardSectionDivider(),
+                  dashboardSectionBlock(context, MoodHistoryCard()),
+                  if (prediction != null) ...[
+                    const DashboardSectionDivider(),
+                    dashboardSectionBlock(
+                      context,
+                      FertilityForecast(prediction: prediction),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          // Breathing room below the surface so the last section never sits
+          // flush against the bottom edge of the page.
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: AppDimensions.elementSpacing * 2,
             ),
           ),
         ],
@@ -119,105 +225,18 @@ class InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
-  Widget _buildProgressCard(
-      double progress,
-      String currentPhase,
-      Color phaseColor,
-      Map<String, dynamic> stats,
-      BuildContext context,
-      int? currentCycleDay,
-      int? daysUntil) {
-    return ClayCard(
-      padding: const EdgeInsets.all(AppDimensions.cardPadding),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isNarrow = constraints.maxWidth < 300;
-
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (!isNarrow) ...[
-                    ProgressIndicator(
-                      value: progress,
-                      size: 92,
-                      strokeWidth: 12,
-                      color: phaseColor,
-                      showPercentage: true,
-                    ),
-                    const SizedBox(width: AppDimensions.elementSpacing),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: isNarrow
-                          ? CrossAxisAlignment.center
-                          : CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(height: AppDimensions.smallSpacing),
-                        Text(
-                          currentPhase,
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: phaseColor,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: AppDimensions.tinySpacing),
-                        Text(
-                          currentCycleDay != null
-                              ? '${context.tr('Day')} $currentCycleDay ${context.tr('of')} ${stats['average'] ?? 28}'
-                              : 'Track your period to see cycle day',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.6),
-                                  ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (daysUntil != null && daysUntil >= 0) ...[
-                          const SizedBox(height: AppDimensions.tinySpacing),
-                          Text(
-                            '$daysUntil ${context.tr('days')} ${context.tr('In')} ${context.tr('nextPeriod')}',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.elementSpacing),
-              Stack(
-                alignment: AlignmentGeometry.centerRight,
-                children: [
-                  if (isNarrow) ...[
-                    LinearProgressIndicator(
-                      value: progress,
-                      year2023: false,
-                      color: phaseColor,
-                      minHeight: 30,
-                      borderRadius: BorderRadiusDirectional.circular(4),
-                      backgroundColor: phaseColor.withAlpha(60),
-                      stopIndicatorColor: phaseColor.withAlpha(255),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          );
-        },
-      ),
-    );
+  String _phaseDisplayName(String name, BuildContext context) {
+    switch (name) {
+      case 'Menstrual':
+        return context.tr('menstrualPhase');
+      case 'Follicular':
+        return context.tr('follicularPhase');
+      case 'Ovulation':
+        return context.tr('ovulationPhase');
+      case 'Luteal':
+        return context.tr('lutealPhase');
+      default:
+        return name;
+    }
   }
 }

@@ -38,7 +38,7 @@ class ProgressIndicator extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadow.withOpacity(0.08),
+                  color: AppColors.shadow.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -59,7 +59,7 @@ class ProgressIndicator extends StatelessWidget {
                 strokeCap: StrokeCap.round,
                 color: color ?? AppColors.primary,
                 backgroundColor: backgroundColor ??
-                    theme.colorScheme.onSurface.withOpacity(0.1),
+                    theme.colorScheme.onSurface.withValues(alpha: 0.1),
               );
             },
           ),
@@ -80,7 +80,7 @@ class ProgressIndicator extends StatelessWidget {
                 Text(
                   label!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
             ],
@@ -122,7 +122,7 @@ class FertilityIndicator extends StatelessWidget {
                 ? []
                 : [
                     BoxShadow(
-                      color: color.withOpacity(0.4),
+                      color: color.withValues(alpha: 0.4),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -140,7 +140,7 @@ class FertilityIndicator extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -175,9 +175,9 @@ class PhaseChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: isActive
-            ? color.withOpacity(0.15)
+            ? color.withValues(alpha: 0.15)
             : isDark
-                ? Colors.white.withOpacity(0.05)
+                ? Colors.white.withValues(alpha: 0.05)
                 : theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
         border: Border.all(
@@ -187,7 +187,7 @@ class PhaseChip extends StatelessWidget {
         boxShadow: isActive && !isDark
             ? [
                 BoxShadow(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -203,7 +203,7 @@ class PhaseChip extends StatelessWidget {
               size: AppDimensions.iconSmall,
               color: isActive
                   ? color
-                  : theme.colorScheme.onSurface.withOpacity(0.5),
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(width: AppDimensions.tinySpacing),
           ],
@@ -215,7 +215,7 @@ class PhaseChip extends StatelessWidget {
               style: theme.textTheme.bodySmall?.copyWith(
                 color: isActive
                     ? color
-                    : theme.colorScheme.onSurface.withOpacity(0.6),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
@@ -287,7 +287,7 @@ class _StatusDotState extends State<StatusDot>
                 ? []
                 : [
                     BoxShadow(
-                      color: widget.color.withOpacity(0.4),
+                      color: widget.color.withValues(alpha: 0.4),
                       blurRadius: widget.pulse
                           ? widget.size * (_animation.value - 0.5)
                           : 6,
@@ -324,7 +324,7 @@ class CycleProgressBar extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(height / 2),
-        color: theme.colorScheme.onSurface.withOpacity(0.1),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(height / 2),
@@ -334,7 +334,7 @@ class CycleProgressBar extends StatelessWidget {
               children: phaseColors.map((color) {
                 return Expanded(
                   child: Container(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                   ),
                 );
               }).toList(),
@@ -346,14 +346,14 @@ class CycleProgressBar extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
+                      AppColors.primary.withValues(alpha: 0.8),
                     ],
                   ),
                   boxShadow: isDark
                       ? []
                       : [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),

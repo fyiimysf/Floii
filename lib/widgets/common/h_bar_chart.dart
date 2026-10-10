@@ -49,9 +49,8 @@ class HBarChart extends StatelessWidget {
                       children: [
                         Container(height: height, color: track),
                         FractionallySizedBox(
-                          widthFactor: max == 0
-                              ? 0
-                              : (item.value / max).clamp(0.0, 1.0),
+                          widthFactor:
+                              max == 0 ? 0 : (item.value / max).clamp(0.0, 1.0),
                           child: Container(height: height, color: item.color),
                         ),
                       ],

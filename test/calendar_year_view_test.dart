@@ -7,7 +7,6 @@ import 'package:hive/hive.dart';
 import 'package:floi/models/cycle_models.dart';
 import 'package:floi/screens/calendar/calendar_year_view.dart';
 import 'package:floi/widgets/common/cycle_day_cell.dart';
-import 'package:floi/widgets/common/floating_tab_bar.dart';
 
 Map<String, dynamic> makeStats() {
   final now = DateTime.now();
@@ -66,15 +65,14 @@ void main() {
     final year = '${DateTime.now().year}';
     expect(
       find.descendant(
-        of: find.byType(FloatingTabBar),
+        of: find.byType(SliverAppBar),
         matching: find.text(year),
       ),
       findsOneWidget,
     );
   });
 
-  testWidgets('mini month grids reuse the home CycleDayCell',
-      (tester) async {
+  testWidgets('mini month grids reuse the home CycleDayCell', (tester) async {
     await pumpYearView(tester);
 
     expect(find.byType(CycleDayCell), findsWidgets);

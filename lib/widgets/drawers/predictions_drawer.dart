@@ -71,7 +71,8 @@ class PredictionsDrawer extends StatelessWidget {
                           Icon(
                             Icons.calendar_today,
                             size: AppDimensions.iconSmall,
-                            color: theme.colorScheme.onSurface.withOpacity(0.5),
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.5),
                           ),
                           const SizedBox(width: AppDimensions.smallSpacing),
                           Text(
@@ -80,8 +81,8 @@ class PredictionsDrawer extends StatelessWidget {
                               fontSize: AppDimensions.fontSmall,
                               letterSpacing: 1.2,
                               fontWeight: FontWeight.w700,
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.5),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -123,7 +124,7 @@ class PredictionsDrawer extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -138,7 +139,7 @@ class PredictionsDrawer extends StatelessWidget {
               width: 180,
               height: 180,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
             ),
@@ -150,7 +151,7 @@ class PredictionsDrawer extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: Colors.white.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
             ),
@@ -206,7 +207,7 @@ class PredictionsDrawer extends StatelessWidget {
               Icon(
                 Icons.history,
                 size: AppDimensions.iconSmall,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               const SizedBox(width: AppDimensions.smallSpacing),
               Text(
@@ -215,7 +216,7 @@ class PredictionsDrawer extends StatelessWidget {
                   fontSize: AppDimensions.fontSmall,
                   letterSpacing: 1.2,
                   fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -224,12 +225,12 @@ class PredictionsDrawer extends StatelessWidget {
         const SizedBox(height: AppDimensions.elementSpacing),
         if (ranges.isEmpty)
           ClayCard(
-            color: isDark ? Colors.white.withOpacity(0.05) : null,
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : null,
             child: Row(
               children: [
                 Icon(
                   Icons.info_outline,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   size: AppDimensions.iconSmall,
                 ),
                 const SizedBox(width: AppDimensions.elementSpacing),
@@ -237,7 +238,7 @@ class PredictionsDrawer extends StatelessWidget {
                   child: Text(
                     context.tr('welcomeSubtitle'),
                     style: TextStyle(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       fontSize: AppDimensions.fontMedium,
                     ),
                   ),
@@ -261,7 +262,7 @@ class PredictionsDrawer extends StatelessWidget {
                         padding:
                             const EdgeInsets.all(AppDimensions.smallSpacing),
                         decoration: BoxDecoration(
-                          color: AppColors.period.withOpacity(0.1),
+                          color: AppColors.period.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -280,7 +281,8 @@ class PredictionsDrawer extends StatelessWidget {
                       subtitle: Text(
                         '${range.duration} days',
                         style: TextStyle(
-                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5),
                           fontSize: AppDimensions.fontSmall,
                         ),
                       ),
@@ -290,7 +292,7 @@ class PredictionsDrawer extends StatelessWidget {
                           vertical: AppDimensions.smallSpacing,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.period.withOpacity(0.1),
+                          color: AppColors.period.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(
                               AppDimensions.radiusCircular),
                         ),
@@ -307,7 +309,7 @@ class PredictionsDrawer extends StatelessWidget {
                     if (!isLast)
                       Divider(
                         height: 1,
-                        color: theme.colorScheme.outline.withOpacity(0.2),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
                       ),
                   ],
                 );
@@ -323,7 +325,7 @@ class _CycleCard extends StatelessWidget {
   final PredictedRange cycle;
   final bool isCurrent;
   final double? progress;
-  final stats;
+  final Map<String, dynamic> stats;
 
   const _CycleCard({
     required this.cycle,
@@ -344,13 +346,13 @@ class _CycleCard extends StatelessWidget {
         color: isCurrent
             ? null
             : isDark
-                ? Colors.white.withOpacity(0.03)
+                ? Colors.white.withValues(alpha: 0.03)
                 : theme.colorScheme.surfaceContainerHighest,
         shadows: isDark || !isCurrent
             ? []
             : [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.15),
+                  color: AppColors.primary.withValues(alpha: 0.15),
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 ),
@@ -365,8 +367,8 @@ class _CycleCard extends StatelessWidget {
               padding: const EdgeInsets.all(AppDimensions.smallSpacing),
               decoration: BoxDecoration(
                 color: isCurrent
-                    ? AppColors.primary.withOpacity(0.15)
-                    : AppColors.predicted.withOpacity(0.15),
+                    ? AppColors.primary.withValues(alpha: 0.15)
+                    : AppColors.predicted.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -388,7 +390,7 @@ class _CycleCard extends StatelessWidget {
               '${DateFormat('MMM dd').format(cycle.endDate)}',
               style: TextStyle(
                 fontSize: AppDimensions.fontMedium,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
             trailing: isCurrent && progress != null
@@ -400,7 +402,7 @@ class _CycleCard extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: progress,
                         backgroundColor:
-                            theme.colorScheme.onSurface.withOpacity(0.1),
+                            theme.colorScheme.onSurface.withValues(alpha: 0.1),
                         valueColor:
                             AlwaysStoppedAnimation<Color>(AppColors.primary),
                         minHeight: 6,
@@ -435,20 +437,20 @@ class _CycleCard extends StatelessWidget {
 
     return ClayCard(
       color: isDark
-          ? Colors.white.withOpacity(0.05)
+          ? Colors.white.withValues(alpha: 0.05)
           : theme.colorScheme.surfaceContainerHighest,
       padding: const EdgeInsets.all(AppDimensions.elementSpacing),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('${context.tr('averageCycle')}',
+          _buildStatItem(context.tr('averageCycle'),
               '${stats['average'] ?? 28} days', theme),
           Container(
             width: 1,
             height: 30,
-            color: theme.colorScheme.outline.withOpacity(0.3),
+            color: theme.colorScheme.outline.withValues(alpha: 0.3),
           ),
-          _buildStatItem('${context.tr('period')}',
+          _buildStatItem(context.tr('period'),
               '${stats['currentPeriodLength'] ?? 5} days', theme),
         ],
       ),
@@ -462,7 +464,7 @@ class _CycleCard extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: AppDimensions.fontSmall,
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
         const SizedBox(height: AppDimensions.tinySpacing),

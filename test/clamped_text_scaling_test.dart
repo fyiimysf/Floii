@@ -49,15 +49,18 @@ Map<String, dynamic> makeStats() {
 
 void main() {
   testWidgets('clamps widths to 0.9 / 1.0 / 1.1', (tester) async {
-    expect(await effectiveScale(tester, const Size(320, 640)), closeTo(0.9, 1e-9));
-    expect(await effectiveScale(tester, const Size(390, 844)), closeTo(1.0, 1e-9));
-    expect(await effectiveScale(tester, const Size(800, 1280)), closeTo(1.1, 1e-9));
+    expect(
+        await effectiveScale(tester, const Size(320, 640)), closeTo(0.9, 1e-9));
+    expect(
+        await effectiveScale(tester, const Size(390, 844)), closeTo(1.0, 1e-9));
+    expect(await effectiveScale(tester, const Size(800, 1280)),
+        closeTo(1.1, 1e-9));
   });
 
   testWidgets('system text scale is preserved, not clamped away',
       (tester) async {
-    final scale = await effectiveScale(tester, const Size(320, 640),
-        textScale: 2.0);
+    final scale =
+        await effectiveScale(tester, const Size(320, 640), textScale: 2.0);
     expect(scale, closeTo(1.8, 1e-9));
   });
 

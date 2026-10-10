@@ -26,7 +26,7 @@ class PhaseCard extends StatelessWidget {
     final progress = PhaseService.calculatePhaseProgress(phase);
 
     return ClayCard(
-      color: isCurrent ? color.withOpacity(0.1) : null,
+      color: isCurrent ? color.withValues(alpha: 0.1) : null,
       radius: AppDimensions.radiusMedium,
       padding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.smallSpacing,
@@ -36,7 +36,7 @@ class PhaseCard extends StatelessWidget {
           ? []
           : [
               BoxShadow(
-                color: color.withOpacity(0.25),
+                color: color.withValues(alpha: 0.25),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -51,8 +51,8 @@ class PhaseCard extends StatelessWidget {
                 padding: const EdgeInsets.all(AppDimensions.smallSpacing),
                 decoration: BoxDecoration(
                   color: isCompleted
-                      ? theme.colorScheme.onSurface.withOpacity(0.06)
-                      : color.withOpacity(0.15),
+                      ? theme.colorScheme.onSurface.withValues(alpha: 0.06)
+                      : color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Stack(
@@ -61,7 +61,7 @@ class PhaseCard extends StatelessWidget {
                     Icon(
                       PhaseService.getPhaseIcon(phase.name),
                       color: isCompleted
-                          ? theme.colorScheme.onSurface.withOpacity(0.35)
+                          ? theme.colorScheme.onSurface.withValues(alpha: 0.35)
                           : color,
                       size: AppDimensions.iconLarge,
                     ),
@@ -97,7 +97,7 @@ class PhaseCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.titleSmall?.copyWith(
               color: isCompleted
-                  ? theme.colorScheme.onSurface.withOpacity(0.45)
+                  ? theme.colorScheme.onSurface.withValues(alpha: 0.45)
                   : color,
               fontWeight: FontWeight.w700,
             ),
@@ -116,7 +116,7 @@ class PhaseCard extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: progress,
                       backgroundColor:
-                          theme.colorScheme.onSurface.withOpacity(0.1),
+                          theme.colorScheme.onSurface.withValues(alpha: 0.1),
                       valueColor: AlwaysStoppedAnimation<Color>(color),
                       minHeight: 4,
                     ),
@@ -127,7 +127,7 @@ class PhaseCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -140,8 +140,8 @@ class PhaseCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: isCompleted
-                    ? theme.colorScheme.onSurface.withOpacity(0.35)
-                    : theme.colorScheme.onSurface.withOpacity(0.6),
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.35)
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
         ],
@@ -165,14 +165,14 @@ class PhaseRow extends StatelessWidget {
     final color = PhaseService.getPhaseColor(phase.name);
 
     return ClayCard(
-      color: color.withOpacity(0.03),
+      color: color.withValues(alpha: 0.03),
       radius: AppDimensions.radiusMedium,
       padding: const EdgeInsets.all(AppDimensions.elementSpacing),
       shadows: isDark
           ? []
           : [
               BoxShadow(
-                color: AppColors.shadow.withOpacity(0.05),
+                color: AppColors.shadow.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -187,7 +187,7 @@ class PhaseRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -198,7 +198,7 @@ class PhaseRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppDimensions.smallSpacing),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -222,7 +222,7 @@ class PhaseRow extends StatelessWidget {
                 Text(
                   '${_formatDate(phase.startDate)} - ${_formatDate(phase.endDate)}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -234,7 +234,7 @@ class PhaseRow extends StatelessWidget {
               vertical: AppDimensions.smallSpacing,
             ),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
             ),
             child: Text(

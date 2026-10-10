@@ -4,7 +4,6 @@ import 'package:floi/utils/extensions/localization_extension.dart';
 import 'package:flutter/material.dart' hide ProgressIndicator;
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/dimensions.dart';
-import '../../../widgets/common/cards.dart';
 import '../../../widgets/common/indicators.dart';
 import '../../../widgets/common/sparkline.dart';
 
@@ -34,46 +33,44 @@ class RegularityCard extends StatelessWidget {
             ? context.tr('regularityModerate')
             : context.tr('regularityLow');
 
-    return ClayCard(
-      child: Row(
-        children: [
-          ProgressIndicator(
-            value: consistency / 100,
-            size: 84,
-            strokeWidth: 9,
-            color: color,
-            label: context.tr('regular'),
-          ),
-          const SizedBox(width: AppDimensions.elementSpacing),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.tr('cycleConsistency'),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+    return Row(
+      children: [
+        ProgressIndicator(
+          value: consistency / 100,
+          size: 84,
+          strokeWidth: 9,
+          color: color,
+          label: context.tr('regular'),
+        ),
+        const SizedBox(width: AppDimensions.elementSpacing),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr('cycleConsistency'),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
                 ),
-                const SizedBox(height: AppDimensions.tinySpacing),
-                Text(
-                  '$consistency% • $status',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.smallSpacing),
-                Sparkline(
-                  values: cycleSeries,
+              ),
+              const SizedBox(height: AppDimensions.tinySpacing),
+              Text(
+                '$consistency% • $status',
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: color,
-                  height: 36,
+                  fontWeight: FontWeight.w700,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: AppDimensions.smallSpacing),
+              Sparkline(
+                values: cycleSeries,
+                color: color,
+                height: 36,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

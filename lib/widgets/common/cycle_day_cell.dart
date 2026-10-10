@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/cycle/prediction_service.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
 import '../../utils/extensions/date_extensions.dart';
+import '../../utils/extensions/localization_extension.dart';
 
 /// A single calendar day cell colored by cycle phase, shared by the home month
 /// grid and the compact month grids in the year overview. Mirrors the phase
@@ -60,64 +62,81 @@ class _CycleDayCellState extends State<CycleDayCell> {
     final isFollicular =
         _isInFollicularPhase(widget.date, widget.stats, fertileDates);
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: Container(
-        margin: const EdgeInsets.all(AppDimensions.calendarCellGap),
-        decoration: BoxDecoration(
-          color: _getBackgroundColor(isPeriod, isOvulation, isFertile,
-              isFollicular, isPredicted, isToday, isDark),
-          borderRadius: BorderRadius.circular(AppDimensions.radiusCell),
-          border: _getBorder(isPeriod, isOvulation, isFertile, isFollicular,
-              isPredicted, isToday),
-          boxShadow: _isPressed
-              ? [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black.withOpacity(0.4)
-                        : AppColors.clayShadow.withOpacity(0.3),
-                    blurRadius: 4,
-                    offset: const Offset(2, 2),
-                    spreadRadius: -1,
-                  ),
-                ]
-              : _getShadow(isPeriod, isOvulation, isFertile, isFollicular,
-                  isToday, isDark),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              left: 4,
-              bottom: 3,
-              child: SizedBox(
-                width: 24,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.bottomLeft,
-                  child: Text(
-                    widget.date.day.toString(),
-                    style: TextStyle(
-                      color: _getTextColor(isCurrentMonth, isOvulation,
-                          isFertile, isFollicular, isToday, isPeriod, isDark),
-                      fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
-                      fontSize: AppDimensions.fontMedium,
+    final semanticLabel = [
+      '${widget.date.day}',
+      if (isToday) context.tr('today'),
+      if (isPeriod) context.tr('period'),
+      if (isPredicted) context.tr('predicted'),
+      if (isFertile) context.tr('fertile'),
+      if (isOvulation) context.tr('ovulationPhase'),
+    ].join(', ');
+
+    return Semantics(
+      button: widget.onTap != null || widget.onLongPress != null,
+      enabled: widget.onTap != null || widget.onLongPress != null,
+      label: semanticLabel,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        onTapDown: (_) {
+          HapticFeedback.selectionClick();
+          setState(() => _isPressed = true);
+        },
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        child: Container(
+          margin: const EdgeInsets.all(AppDimensions.calendarCellGap),
+          decoration: BoxDecoration(
+            color: _getBackgroundColor(isPeriod, isOvulation, isFertile,
+                isFollicular, isPredicted, isToday, isDark),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusCell),
+            border: _getBorder(isPeriod, isOvulation, isFertile, isFollicular,
+                isPredicted, isToday),
+            boxShadow: _isPressed
+                ? [
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black.withValues(alpha: 0.4)
+                          : AppColors.clayShadow.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(2, 2),
+                      spreadRadius: -1,
+                    ),
+                  ]
+                : _getShadow(isPeriod, isOvulation, isFertile, isFollicular,
+                    isToday, isDark),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                left: 4,
+                bottom: 3,
+                child: SizedBox(
+                  width: 24,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      widget.date.day.toString(),
+                      style: TextStyle(
+                        color: _getTextColor(isCurrentMonth, isOvulation,
+                            isFertile, isFollicular, isToday, isPeriod, isDark),
+                        fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
+                        fontSize: AppDimensions.fontMedium,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Positioned(
-              top: 4,
-              right: 4,
-              child: _buildTopRightIcon(
-                      theme, isPeriod, isOvulation, isFertile, isPredicted) ??
-                  const SizedBox.shrink(),
-            ),
-          ],
+              Positioned(
+                top: 4,
+                right: 4,
+                child: _buildTopRightIcon(
+                        theme, isPeriod, isOvulation, isFertile, isPredicted) ??
+                    const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -151,12 +170,12 @@ class _CycleDayCellState extends State<CycleDayCell> {
 
   Color _getBackgroundColor(bool isPeriod, bool isOvulation, bool isFertile,
       bool isFollicular, bool isPredicted, bool isToday, bool isDark) {
-    if (isPeriod) return AppColors.period.withOpacity(0.15);
-    if (isOvulation) return AppColors.ovulation.withOpacity(0.2);
-    if (isFertile) return AppColors.fertile.withOpacity(0.1);
-    if (isFollicular) return AppColors.follicular.withOpacity(0.1);
-    if (isPredicted) return AppColors.predicted.withOpacity(0.08);
-    if (isToday) return AppColors.today.withOpacity(0.1);
+    if (isPeriod) return AppColors.period.withValues(alpha: 0.15);
+    if (isOvulation) return AppColors.ovulation.withValues(alpha: 0.2);
+    if (isFertile) return AppColors.fertile.withValues(alpha: 0.1);
+    if (isFollicular) return AppColors.follicular.withValues(alpha: 0.1);
+    if (isPredicted) return AppColors.predicted.withValues(alpha: 0.08);
+    if (isToday) return AppColors.today.withValues(alpha: 0.1);
     return isDark ? Colors.transparent : theme.colorScheme.surface;
   }
 
@@ -164,19 +183,24 @@ class _CycleDayCellState extends State<CycleDayCell> {
       bool isFollicular, bool isPredicted, bool isToday) {
     if (isOvulation) return Border.all(color: AppColors.ovulation, width: 2);
     if (isPeriod) {
-      return Border.all(color: AppColors.period.withOpacity(0.5), width: 2);
+      return Border.all(
+          color: AppColors.period.withValues(alpha: 0.5), width: 2);
     }
     if (isFertile) {
-      return Border.all(color: AppColors.fertile.withOpacity(0.5), width: 0);
+      return Border.all(
+          color: AppColors.fertile.withValues(alpha: 0.5), width: 0);
     }
     if (isFollicular) {
-      return Border.all(color: AppColors.follicular.withOpacity(0.5), width: 1);
+      return Border.all(
+          color: AppColors.follicular.withValues(alpha: 0.5), width: 1);
     }
     if (isPredicted) {
-      return Border.all(color: AppColors.predicted.withOpacity(0.8), width: 2);
+      return Border.all(
+          color: AppColors.predicted.withValues(alpha: 0.8), width: 2);
     }
     if (isToday) return Border.all(color: AppColors.today, width: 2);
-    return Border.all(color: theme.colorScheme.outline.withOpacity(0), width: 1);
+    return Border.all(
+        color: theme.colorScheme.outline.withValues(alpha: 0), width: 1);
   }
 
   List<BoxShadow> _getShadow(bool isPeriod, bool isOvulation, bool isFertile,
@@ -188,8 +212,8 @@ class _CycleDayCellState extends State<CycleDayCell> {
     if (isPeriod || isToday) {
       return [
         BoxShadow(
-          color:
-              (isPeriod ? AppColors.period : AppColors.today).withOpacity(0.15),
+          color: (isPeriod ? AppColors.period : AppColors.today)
+              .withValues(alpha: 0.15),
           blurRadius: 3,
           offset: const Offset(0, 1),
         ),
@@ -198,7 +222,7 @@ class _CycleDayCellState extends State<CycleDayCell> {
 
     return [
       BoxShadow(
-        color: AppColors.clayShadow.withOpacity(0.1),
+        color: AppColors.clayShadow.withValues(alpha: 0.1),
         blurRadius: 2,
         offset: const Offset(0, 1),
       ),
@@ -207,7 +231,9 @@ class _CycleDayCellState extends State<CycleDayCell> {
 
   Color _getTextColor(bool isCurrentMonth, bool isOvulation, bool isFertile,
       bool isFollicular, bool isToday, bool isPeriod, bool isDark) {
-    if (!isCurrentMonth) return theme.colorScheme.onSurface.withOpacity(0.3);
+    if (!isCurrentMonth) {
+      return theme.colorScheme.onSurface.withValues(alpha: 0.3);
+    }
     if (isOvulation) return AppColors.ovulation;
     if (isFertile) return AppColors.fertile;
     if (isFollicular) return AppColors.follicular;

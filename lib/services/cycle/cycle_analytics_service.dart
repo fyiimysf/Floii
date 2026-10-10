@@ -27,10 +27,9 @@ class CycleAnalyticsService {
     if (values.length < 2) return 0;
     final nums = values.map((v) => v.toDouble()).toList();
     final mean = nums.reduce((a, b) => a + b) / nums.length;
-    final variance = nums
-            .map((v) => (v - mean) * (v - mean))
-            .reduce((a, b) => a + b) /
-        (nums.length - 1);
+    final variance =
+        nums.map((v) => (v - mean) * (v - mean)).reduce((a, b) => a + b) /
+            (nums.length - 1);
     return math.sqrt(variance);
   }
 
@@ -91,19 +90,22 @@ class CycleAnalyticsService {
           ? cycleLengths.reduce((a, b) => a + b) / cycleLengths.length
           : null,
       'medianCycle': cycleLengths.isNotEmpty ? median(cycleLengths) : null,
-      'minCycle':
-          cycleLengths.isNotEmpty ? cycleLengths.reduce((a, b) => a < b ? a : b) : null,
-      'maxCycle':
-          cycleLengths.isNotEmpty ? cycleLengths.reduce((a, b) => a > b ? a : b) : null,
+      'minCycle': cycleLengths.isNotEmpty
+          ? cycleLengths.reduce((a, b) => a < b ? a : b)
+          : null,
+      'maxCycle': cycleLengths.isNotEmpty
+          ? cycleLengths.reduce((a, b) => a > b ? a : b)
+          : null,
       'averagePeriod': periodLengths.isNotEmpty
           ? periodLengths.reduce((a, b) => a + b) / periodLengths.length
           : null,
-      'medianPeriod':
-          periodLengths.isNotEmpty ? median(periodLengths) : null,
-      'minPeriod':
-          periodLengths.isNotEmpty ? periodLengths.reduce((a, b) => a < b ? a : b) : null,
-      'maxPeriod':
-          periodLengths.isNotEmpty ? periodLengths.reduce((a, b) => a > b ? a : b) : null,
+      'medianPeriod': periodLengths.isNotEmpty ? median(periodLengths) : null,
+      'minPeriod': periodLengths.isNotEmpty
+          ? periodLengths.reduce((a, b) => a < b ? a : b)
+          : null,
+      'maxPeriod': periodLengths.isNotEmpty
+          ? periodLengths.reduce((a, b) => a > b ? a : b)
+          : null,
       'cycleStdDev': stdDev(cycleLengths),
       'consistency': _consistencyScore(cycleLengths),
     };
@@ -165,7 +167,8 @@ class CycleAnalyticsService {
     for (int i = 1; i < periods.length; i++) {
       cycleSeries.add((
         start: periods[i].first,
-        value: periods[i].first.difference(periods[i - 1].first).inDays.toDouble(),
+        value:
+            periods[i].first.difference(periods[i - 1].first).inDays.toDouble(),
       ));
     }
 
@@ -204,8 +207,7 @@ class CycleAnalyticsService {
       ..sort((a, b) => a.key.compareTo(b.key));
     final total = cycleLengths.isEmpty ? 1 : cycleLengths.length;
     return entries
-        .map((e) =>
-            (length: e.key, count: e.value, fraction: e.value / total))
+        .map((e) => (length: e.key, count: e.value, fraction: e.value / total))
         .toList();
   }
 }
