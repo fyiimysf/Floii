@@ -1,13 +1,28 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import '../../models/cycle_models.dart';
-import '../../services/localization/app_localizations.dart';
+
+import '../../services/cycle/period_log_service.dart';
 import '../../services/localization/language_service.dart';
+import '../../services/storage/storage_service.dart';
+import '../../services/widget/home_widget_service.dart';
 import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
+import '../../utils/extensions/localization_extension.dart';
+import '../../widgets/common/cards.dart';
+import '../../widgets/common/entrance.dart';
+import 'widgets/cycle_ring.dart';
+import 'widgets/onboarding_features.dart';
+import 'widgets/onboarding_setup.dart';
 
+/// The first thing a new user sees: a short welcome, a tappable feature tour,
+/// a two-control cycle setup, and a summary that reflects the answers.
+///
+/// The date and lengths live here rather than in the setup widget so they
+/// survive swiping away and back, and they are only written to storage at the
+/// very end so abandoning the flow leaves nothing behind.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -15,70 +30,66 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  static const int _pageCount = 4;
+
   final PageController _pageController = PageController();
   final LanguageService _languageService = LanguageService();
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  final StorageService _storage = StorageService();
 
   int _currentPage = 0;
   String _selectedLanguage = 'en';
-  bool _isDarkMode = true;
+
+  late DateTime _lastPeriodStart;
+  late int _periodLength;
+  late int _cycleLength;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeOut,
-      ),
-    );
-    _animationController.forward();
     _selectedLanguage = _languageService.currentLocale.languageCode;
-    _loadTheme();
-  }
-
-  void _loadTheme() {
-    final box = Hive.box<Options>('options');
-    final options = box.get('theme');
-    if (mounted) {
-      setState(() {
-        _isDarkMode = options?.darkMode ?? true;
-      });
-    }
+    _lastPeriodStart = DateTime.now();
+    _periodLength = _storage.getMenstrualDays();
+    _cycleLength = _storage.getCycleLength();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 
-  Future<void> _completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_completed_onboarding', true);
-
-    if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/');
-    }
+  void _goTo(int page) {
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _nextPage() {
-    if (_currentPage < 2) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+    if (_currentPage < _pageCount - 1) {
+      _goTo(_currentPage + 1);
     } else {
-      _completeOnboarding();
+      _finish(saveSetup: true);
     }
+  }
+
+  Future<void> _finish({required bool saveSetup}) async {
+    if (saveSetup && _storage.getPeriodDays().isEmpty) {
+      await _storage.setMenstrualDays(_periodLength);
+      await _storage.setCycleLength(_cycleLength);
+      PeriodLogService().markRange(_lastPeriodStart, _periodLength);
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_completed_onboarding', true);
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacementNamed('/');
+    unawaited(
+      HomeWidgetService().update().catchError((Object error) {}),
+    );
   }
 
   void _showLanguageModal() {
@@ -88,11 +99,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       backgroundColor: Colors.transparent,
       builder: (context) => _LanguageSelectionModal(
         selectedLanguage: _selectedLanguage,
-        isDarkMode: _isDarkMode,
         onLanguageSelected: (code) {
-          setState(() {
-            _selectedLanguage = code;
-          });
+          setState(() => _selectedLanguage = code);
           _languageService.setLanguage(code);
           Navigator.pop(context);
         },
@@ -100,505 +108,338 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  Color get _backgroundColor =>
-      _isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight;
-  Color get _textColor => _isDarkMode ? Colors.white : AppColors.textPrimary;
-  Color get _textSecondaryColor =>
-      _isDarkMode ? Colors.white70 : AppColors.textSecondary;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _TopBar(
+              showBack: _currentPage > 0,
+              onBack: () => _goTo(_currentPage - 1),
+              languageCode: _selectedLanguage,
+              onLanguage: _showLanguageModal,
+            ),
+            _ProgressBar(current: _currentPage, count: _pageCount),
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (page) => setState(() => _currentPage = page),
+                children: [
+                  for (var i = 0; i < _pageCount; i++)
+                    EntranceOnActivate(
+                      isActive: _currentPage == i,
+                      child: _page(i),
+                    ),
+                ],
+              ),
+            ),
+            _BottomBar(
+              label: _currentPage == _pageCount - 1
+                  ? context.tr('getStarted')
+                  : context.tr('continueBtn'),
+              showSkip: _currentPage < _pageCount - 1,
+              onContinue: _nextPage,
+              onSkip: () => _finish(saveSetup: false),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _page(int index) {
+    switch (index) {
+      case 0:
+        return const _WelcomePage();
+      case 1:
+        return const OnboardingFeatures();
+      case 2:
+        return OnboardingSetup(
+          lastPeriodStart: _lastPeriodStart,
+          periodLength: _periodLength,
+          cycleLength: _cycleLength,
+          onDateChanged: (date) => setState(() => _lastPeriodStart = date),
+          onPeriodLengthChanged: (days) =>
+              setState(() => _periodLength = days),
+          onCycleLengthChanged: (days) => setState(() => _cycleLength = days),
+        );
+      default:
+        return _ReadyPage(
+          lastPeriodStart: _lastPeriodStart,
+          periodLength: _periodLength,
+          cycleLength: _cycleLength,
+        );
+    }
+  }
+}
+
+/// Back affordance on the left, the language switch on the right. No app bar,
+/// so the onboarding keeps its own frame instead of inheriting the tab chrome.
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.showBack,
+    required this.onBack,
+    required this.languageCode,
+    required this.onLanguage,
+  });
+
+  final bool showBack;
+  final VoidCallback onBack;
+  final String languageCode;
+  final VoidCallback onLanguage;
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: _backgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        leading: _currentPage > 0
-            ? IconButton(
-                icon: Icon(
-                  Icons.arrow_back_ios,
-                  color: _isDarkMode ? Colors.white70 : Colors.grey.shade700,
-                ),
-                onPressed: () {
-                  if (_currentPage > 0) {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  }
-                },
-              )
-            : null,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: TextButton.icon(
-              onPressed: _showLanguageModal,
-              icon: Icon(
-                Icons.language,
-                color: _isDarkMode ? Colors.white70 : AppColors.primary,
-                size: 20,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.smallSpacing,
+        AppDimensions.smallSpacing,
+        AppDimensions.screenPadding,
+        0,
+      ),
+      child: Row(
+        children: [
+          AnimatedOpacity(
+            opacity: showBack ? 1 : 0,
+            duration: AppDimensions.durationNormal,
+            child: IgnorePointer(
+              ignoring: !showBack,
+              child: IconButton(
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_back_rounded),
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               ),
-              label: Text(
-                _selectedLanguage.toUpperCase(),
-                style: TextStyle(
-                  color: _isDarkMode ? Colors.white70 : AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: onLanguage,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.elementSpacing,
+                vertical: AppDimensions.smallSpacing,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusCircular),
+                border: Border.all(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
                 ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.translate_rounded,
+                    size: 18,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  const SizedBox(width: AppDimensions.smallSpacing),
+                  Text(
+                    languageCode.toUpperCase(),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (page) {
-                  setState(() {
-                    _currentPage = page;
-                  });
-                },
-                children: [
-                  _buildWelcomePage(context, size),
-                  _buildFeaturesPage(context, size),
-                  _buildReadyPage(context, size),
-                ],
-              ),
-            ),
-            Container(
-              color: Colors.transparent,
-              padding: const EdgeInsets.all(AppDimensions.screenPadding),
-              child: Column(
-                children: [
-                  SmoothPageIndicator(
-                    controller: _pageController,
-                    count: 3,
-                    effect: WormEffect(
-                      dotWidth: 100,
-                      dotHeight: 05,
-                      spacing: 10,
-                      dotColor: _isDarkMode
-                          ? Colors.white.withValues(alpha: 0.3)
-                          : Colors.black.withValues(alpha: 0.2),
-                      activeDotColor: AppColors.primary,
-                    ),
-                  ),
-                  if (_currentPage < 2)
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: TextButton(
-                        key: const ValueKey('skip_button'),
-                        onPressed: _completeOnboarding,
-                        child: Text(
-                          AppLocalizations.of(context)?.translate('skip') ??
-                              'Skip',
-                          style: TextStyle(
-                            color: _isDarkMode
-                                ? Colors.white70
-                                : AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    SizedBox(
-                      height: 48,
-                    ),
-                  ElevatedButton(
-                    onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity, 60),
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppDimensions.radiusLarge,
-                        ),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      _currentPage == 2
-                          ? (AppLocalizations.of(context)
-                                  ?.translate('getStarted') ??
-                              'Get Started')
-                          : (AppLocalizations.of(context)?.translate('next') ??
-                              'Next'),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.elementSpacing),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
+}
 
-  Widget _buildWelcomePage(BuildContext context, Size screenSize) {
-    final localizations = AppLocalizations.of(context);
+/// Four segments that fill as the flow advances, so the length of the journey
+/// is always visible.
+class _ProgressBar extends StatelessWidget {
+  const _ProgressBar({required this.current, required this.count});
 
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.screenPadding, vertical: 10),
-        child: LayoutBuilder(
-          builder: (context, constr) => ListView(
-            children: [
-              Container(
-                constraints: BoxConstraints(minHeight: constr.maxHeight),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(30.0),
-                        child: Center(
-                          child: Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(40),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.period.withValues(
-                                      alpha: _isDarkMode ? 0.4 : 0.3),
-                                  blurRadius: 40,
-                                  offset: const Offset(0, 20),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(40),
-                              child: Image.asset(
-                                'lib/icons/icon-512.png',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Center(
-                        child: Text(
-                          localizations?.translate('appName') ?? 'Floii',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
-                            fontSize: 42,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppDimensions.smallSpacing),
-                      Text(
-                        localizations?.translate('appTagline') ??
-                            'Track your cycle with ease',
-                        style: TextStyle(
-                          color: _textSecondaryColor,
-                          fontSize: 18,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppDimensions.sectionSpacing),
-                      Container(
-                        padding:
-                            const EdgeInsets.all(AppDimensions.cardPadding),
-                        decoration: BoxDecoration(
-                          color: _isDarkMode
-                              ? Colors.white.withValues(alpha: 0.05)
-                              : AppColors.primary.withValues(alpha: 0.05),
-                          borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusLarge),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            width: 0,
-                          ),
-                        ),
-                        child: Text(
-                          localizations?.translate('onboardingWelcomeDesc') ??
-                              'Your personal companion for understanding and tracking your menstrual cycle with precision and care.',
-                          style: TextStyle(
-                            height: 1.6,
-                            color: _textColor,
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
+  final int current;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.screenPadding,
+        AppDimensions.elementSpacing,
+        AppDimensions.screenPadding,
+        AppDimensions.smallSpacing,
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < count; i++)
+            Expanded(
+              child: Padding(
+                padding: EdgeInsetsDirectional.only(
+                  end: i == count - 1 ? 0 : AppDimensions.smallSpacing,
+                ),
+                child: AnimatedContainer(
+                  duration: AppDimensions.durationNormal,
+                  curve: Curves.easeOut,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: i <= current
+                        ? AppColors.primary
+                        : theme.colorScheme.onSurface.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               ),
-            ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({
+    required this.label,
+    required this.showSkip,
+    required this.onContinue,
+    required this.onSkip,
+  });
+
+  final String label;
+  final bool showSkip;
+  final VoidCallback onContinue;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppDimensions.screenPadding,
+        AppDimensions.smallSpacing,
+        AppDimensions.screenPadding,
+        AppDimensions.elementSpacing,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ElevatedButton(
+            onPressed: onContinue,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
+              ),
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: AppDimensions.fontXL,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: AppDimensions.durationNormal,
+            curve: Curves.easeOut,
+            child: showSkip
+                ? TextButton(
+                    key: const ValueKey('skip_button'),
+                    onPressed: onSkip,
+                    child: Text(
+                      context.tr('skip'),
+                      style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.6),
+                      ),
+                    ),
+                  )
+                : const SizedBox(height: AppDimensions.elementSpacing),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WelcomePage extends StatelessWidget {
+  const _WelcomePage();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return _CenteredScroll(
+      children: [
+        const CycleRingIllustration(),
+        const SizedBox(height: AppDimensions.sectionSpacing * 1.5),
+        Text(
+          context.tr('appName'),
+          textAlign: TextAlign.center,
+          style: theme.textTheme.displayMedium?.copyWith(
+            color: AppColors.primary,
+            fontSize: 40,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFeaturesPage(BuildContext context, Size screenSize) {
-    final localizations = AppLocalizations.of(context);
-
-    final features = [
-      {
-        'icon': Icons.calendar_today,
-        'color': AppColors.period,
-        'title':
-            localizations?.translate('featureTracking') ?? 'Smart Tracking',
-        'desc': localizations?.translate('featureTrackingDesc') ??
-            'Easily log your period dates and symptoms with just a tap',
-      },
-      {
-        'icon': Icons.auto_awesome,
-        'color': AppColors.ovulation,
-        'title':
-            localizations?.translate('featurePrediction') ?? 'AI Predictions',
-        'desc': localizations?.translate('featurePredictionDesc') ??
-            'Get accurate predictions for your next period and fertile window',
-      },
-      {
-        'icon': Icons.insights,
-        'color': AppColors.clayShadow,
-        'title': localizations?.translate('featureInsights') ?? 'Deep Insights',
-        'desc': localizations?.translate('featureInsightsDesc') ??
-            'Understand your cycle phases and patterns with detailed analytics',
-      },
-      {
-        'icon': Icons.privacy_tip,
-        'color': AppColors.today,
-        'title': localizations?.translate('featurePrivacy') ?? '100% Private',
-        'desc': localizations?.translate('featurePrivacyDesc') ??
-            'Your data stays on your device. No cloud, no tracking, complete privacy',
-      },
-    ];
-
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: AppDimensions.screenPadding),
-      child: LayoutBuilder(
-        builder: (context, constraints) => ListView(
-          children: [
-            Container(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Center(
-                child: Column(
-                  children: [
-                    Text(
-                      localizations?.translate('keyFeatures') ?? 'Key Features',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: _textColor,
-                        fontSize: 24,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.sectionSpacing),
-                    ...features.map((feature) {
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                            bottom: AppDimensions.elementSpacing),
-                        child: Container(
-                          padding: const EdgeInsets.all(
-                              AppDimensions.elementSpacing),
-                          decoration: BoxDecoration(
-                            color: _isDarkMode
-                                ? Colors.white.withValues(alpha: 0.05)
-                                : Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusMedium),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: (feature['color'] as Color)
-                                      .withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(
-                                      AppDimensions.radiusMedium),
-                                ),
-                                child: Icon(
-                                  feature['icon'] as IconData,
-                                  color: feature['color'] as Color,
-                                  size: 28,
-                                ),
-                              ),
-                              const SizedBox(
-                                  width: AppDimensions.elementSpacing),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      feature['title'] as String,
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: feature['color'] as Color,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      feature['desc'] as String,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        color: _textSecondaryColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        const SizedBox(height: AppDimensions.smallSpacing),
+        Text(
+          context.tr('appTagline'),
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildReadyPage(BuildContext context, Size screenSize) {
-    final localizations = AppLocalizations.of(context);
-
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: AppDimensions.screenPadding),
-      child: LayoutBuilder(
-        builder: (conx, conr) => ListView(
-          children: [
-            Container(
-              constraints: BoxConstraints(minHeight: conr.maxHeight),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.purple
-                                .withValues(alpha: _isDarkMode ? 0.4 : 0.3),
-                            blurRadius: 30,
-                            offset: const Offset(0, 15),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: Image.asset(
-                          'lib/icons/icon-512.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.sectionSpacing * 1.5),
-                    Text(
-                      localizations?.translate('allSet') ?? "You're All Set!",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: _textColor,
-                        fontSize: 24,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppDimensions.elementSpacing),
-                    Text(
-                      localizations?.translate('readyToStart') ??
-                          'Start tracking your cycle and discover insights about your body.',
-                      style: TextStyle(
-                        color: _textSecondaryColor,
-                        height: 1.6,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppDimensions.sectionSpacing),
-                    Container(
-                      padding: const EdgeInsets.all(AppDimensions.cardPadding),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary.withValues(alpha: 0.1),
-                            AppColors.lilac.withValues(alpha: 0.1),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusLarge),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildTipItem(
-                              Icons.touch_app,
-                              localizations?.translate('tip1') ??
-                                  'Tap any date to mark your period'),
-                          const SizedBox(height: AppDimensions.elementSpacing),
-                          _buildTipItem(
-                              Icons.notifications_active,
-                              localizations?.translate('tip2') ??
-                                  'Get predictions for your next cycle'),
-                          const SizedBox(height: AppDimensions.elementSpacing),
-                          _buildTipItem(
-                              Icons.security,
-                              localizations?.translate('tip3') ??
-                                  'Your data is safe and private'),
-                          const SizedBox(height: AppDimensions.elementSpacing),
-                          _buildTipItem(
-                              Icons.history,
-                              localizations?.translate('tip4') ??
-                                  'Add 2+ previous cycles for accurate predictions'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        const SizedBox(height: AppDimensions.elementSpacing),
+        Text(
+          context.tr('onboardingWelcomeDesc'),
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            height: 1.55,
+          ),
         ),
-      ),
+        const SizedBox(height: AppDimensions.sectionSpacing),
+        const _PrivacyNote(),
+      ],
     );
   }
+}
 
-  Widget _buildTipItem(IconData icon, String text) {
-    return Row(
+class _PrivacyNote extends StatelessWidget {
+  const _PrivacyNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
       children: [
-        Icon(
-          icon,
-          color: AppColors.primary,
-          size: 24,
-        ),
-        const SizedBox(width: AppDimensions.elementSpacing),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: _textSecondaryColor,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.verified_user_rounded,
+                size: 16, color: AppColors.fertile),
+            const SizedBox(width: AppDimensions.smallSpacing),
+            Text(
+              context.tr('onboardingPrivateTitle'),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: AppColors.fertile,
+              ),
             ),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.tinySpacing),
+        Text(
+          context.tr('onboardingPrivateSubtitle'),
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
       ],
@@ -606,27 +447,209 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 }
 
-class _LanguageSelectionModal extends StatelessWidget {
-  final String selectedLanguage;
-  final bool isDarkMode;
-  final Function(String) onLanguageSelected;
-
-  const _LanguageSelectionModal({
-    required this.selectedLanguage,
-    required this.isDarkMode,
-    required this.onLanguageSelected,
+class _ReadyPage extends StatelessWidget {
+  const _ReadyPage({
+    required this.lastPeriodStart,
+    required this.periodLength,
+    required this.cycleLength,
   });
+
+  final DateTime lastPeriodStart;
+  final int periodLength;
+  final int cycleLength;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final nextPeriod = lastPeriodStart.add(Duration(days: cycleLength));
+    final format = DateFormat('MMM d');
+
+    return _CenteredScroll(
+      children: [
+        Container(
+          width: 92,
+          height: 92,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              colors: AppColors.gradientPrimary,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.35),
+                blurRadius: 30,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.check_rounded, color: Colors.white, size: 48),
+        ),
+        const SizedBox(height: AppDimensions.sectionSpacing),
+        Text(
+          context.tr('allSet'),
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineMedium,
+        ),
+        const SizedBox(height: AppDimensions.smallSpacing),
+        Text(
+          context.tr('readyToStart'),
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: AppDimensions.sectionSpacing),
+        ClayCard(
+          padding: const EdgeInsets.all(AppDimensions.cardPadding),
+          child: Column(
+            children: [
+              _SummaryRow(
+                icon: Icons.event_rounded,
+                color: AppColors.period,
+                label: context.tr('readyLastPeriod'),
+                value: format.format(lastPeriodStart),
+              ),
+              const _SummaryDivider(),
+              _SummaryRow(
+                icon: Icons.event_available_rounded,
+                color: AppColors.ovulation,
+                label: context.tr('readyNextPeriod'),
+                value: format.format(nextPeriod),
+              ),
+              const _SummaryDivider(),
+              _SummaryRow(
+                icon: Icons.water_drop_rounded,
+                color: AppColors.primary,
+                label: context.tr('readyPeriodLength'),
+                value: '$periodLength ${context.tr('days')}',
+              ),
+              const _SummaryDivider(),
+              _SummaryRow(
+                icon: Icons.autorenew_rounded,
+                color: AppColors.fertile,
+                label: context.tr('readyCycleLength'),
+                value: '$cycleLength ${context.tr('days')}',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppDimensions.smallSpacing),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusSmall),
+          ),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        const SizedBox(width: AppDimensions.elementSpacing),
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryDivider extends StatelessWidget {
+  const _SummaryDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppDimensions.elementSpacing),
+      child: Container(
+        height: 1,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
+      ),
+    );
+  }
+}
+
+/// Vertically centred column that still scrolls on short screens.
+class _CenteredScroll extends StatelessWidget {
+  const _CenteredScroll({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.screenPadding,
+          vertical: AppDimensions.elementSpacing,
+        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: constraints.maxHeight - AppDimensions.elementSpacing * 2,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageSelectionModal extends StatelessWidget {
+  const _LanguageSelectionModal({
+    required this.selectedLanguage,
+    required this.onLanguageSelected,
+  });
+
+  final String selectedLanguage;
+  final ValueChanged<String> onLanguageSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final languageService = LanguageService();
-    final bgColor =
-        isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight;
-    final textColor = isDarkMode ? Colors.white : AppColors.textPrimary;
+    final surface = theme.colorScheme.surface;
 
     return Container(
       decoration: BoxDecoration(
-        color: bgColor,
+        color: surface,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppDimensions.radiusXL),
         ),
@@ -640,7 +663,7 @@ class _LanguageSelectionModal extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: textColor.withValues(alpha: 0.3),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -648,13 +671,11 @@ class _LanguageSelectionModal extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.screenPadding),
-              child: Text(
-                AppLocalizations.of(context)?.translate('chooseLanguage') ??
-                    'Choose Language',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  context.tr('chooseLanguage'),
+                  style: theme.textTheme.titleMedium,
                 ),
               ),
             ),
@@ -676,27 +697,26 @@ class _LanguageSelectionModal extends StatelessWidget {
                   return Padding(
                     padding: const EdgeInsets.only(
                         bottom: AppDimensions.smallSpacing),
-                    child: InkWell(
+                    child: GestureDetector(
                       onTap: () => onLanguageSelected(code),
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusMedium),
+                      behavior: HitTestBehavior.opaque,
                       child: Container(
                         padding:
                             const EdgeInsets.all(AppDimensions.elementSpacing),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary.withValues(alpha: 0.1)
-                              : (isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.05)
-                                  : Colors.grey.shade50),
-                          borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusMedium),
-                          border: isSelected
-                              ? Border.all(
-                                  color:
-                                      AppColors.primary.withValues(alpha: 0.3),
-                                  width: 2)
-                              : null,
+                              : theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(
+                              AppDimensions.radiusMedium),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primary.withValues(alpha: 0.35)
+                                : theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.06),
+                            width: isSelected ? 2 : 1,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -706,20 +726,18 @@ class _LanguageSelectionModal extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? AppColors.primary
-                                    : (isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.1)
-                                        : Colors.grey.shade200),
+                                    : theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(
                                     AppDimensions.radiusMedium),
                               ),
                               child: Center(
                                 child: Text(
                                   code.toUpperCase(),
-                                  style: TextStyle(
-                                    color:
-                                        isSelected ? Colors.white : textColor,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : theme.colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -731,20 +749,19 @@ class _LanguageSelectionModal extends StatelessWidget {
                                 children: [
                                   Text(
                                     nativeName,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
+                                    style: theme.textTheme.titleSmall?.copyWith(
                                       color: isSelected
                                           ? AppColors.primary
-                                          : textColor,
+                                          : theme.colorScheme.onSurface,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     name,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: textColor.withValues(alpha: 0.5),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ],
@@ -752,7 +769,7 @@ class _LanguageSelectionModal extends StatelessWidget {
                             ),
                             if (isSelected)
                               const Icon(
-                                Icons.check_circle,
+                                Icons.check_circle_rounded,
                                 color: AppColors.primary,
                                 size: 28,
                               ),

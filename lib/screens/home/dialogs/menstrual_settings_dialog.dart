@@ -113,71 +113,20 @@ class _MenstrualSettingsDialogState extends State<MenstrualSettingsDialog> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppDimensions.elementSpacing),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(7, (index) {
-                          final days = 3 + index;
-                          final isSelected = selectedDays == days;
-
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  selectedDays = days;
-                                });
-                              },
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : theme.colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(
-                                      AppDimensions.radiusSmall),
-                                  boxShadow: isDark
-                                      ? []
-                                      : isSelected
-                                          ? [
-                                              BoxShadow(
-                                                color: AppColors.primary
-                                                    .withValues(alpha: 0.35),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 3),
-                                              ),
-                                            ]
-                                          : [
-                                              BoxShadow(
-                                                color: AppColors.clayShadow
-                                                    .withValues(alpha: 0.15),
-                                                blurRadius: 3,
-                                                offset: const Offset(3, 3),
-                                              ),
-                                            ],
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '$days',
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Colors.white
-                                          : theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
+                    const SizedBox(height: AppDimensions.smallSpacing),
+                    Slider(
+                      value: selectedDays.toDouble(),
+                      min: 3,
+                      max: 9,
+                      divisions: 6,
+                      label: '$selectedDays',
+                      onChanged: (val) {
+                        setState(() {
+                          selectedDays = val.round();
+                        });
+                      },
                     ),
-                    const SizedBox(height: AppDimensions.elementSpacing),
+                    const SizedBox(height: AppDimensions.smallSpacing),
                     Text(
                       '$selectedDays ${context.tr('days')}',
                       style: theme.textTheme.titleMedium?.copyWith(

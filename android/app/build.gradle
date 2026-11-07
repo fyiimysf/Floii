@@ -38,6 +38,14 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+
+    lint {
+        // Disable checking release builds for lint errors completely
+        checkReleaseBuilds false
+        
+        // OR disable just the specific comment detector causing the crash
+        disable 'InvalidPackage', 'Comment'
+    }
 }
 
 flutter {

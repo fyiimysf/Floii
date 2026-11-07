@@ -18,13 +18,14 @@ dependencies:
   intl: 
   collection: ^1.17.0
   shared_preferences:
-  smooth_page_indicator: ^1.1.0 
   file_picker: ^12.2.0
   hugeicons: ^1.1.0
   skeletonizer: ^3.0.0
   flutter_local_notifications: ^22.3.1
   timezone: ^0.11.1
   flutter_timezone: ^5.1.0
+  home_widget: ^0.10.0
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -39,6 +40,21 @@ flutter:
   uses-material-design: true
   assets:
     - lib/icons/
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito_400Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Nunito_500Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Nunito_600SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Nunito_700Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Nunito_800ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Nunito_900Black.ttf
+          weight: 900
 
 # Generated splash screen. Never edit android/app/src/main/res/**styles.xml or
 # launch_background.xml by hand - change this block and re-run:

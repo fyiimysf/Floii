@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/services.dart';
 import '../utils/constants/colors.dart';
 import '../utils/constants/dimensions.dart';
@@ -213,49 +214,10 @@ class AppTheme {
           ),
         ),
       ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
-          fontSize: AppDimensions.fontDisplay,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-          letterSpacing: -1,
-        ),
-        titleLarge: TextStyle(
-          fontSize: AppDimensions.fontTitle,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-          letterSpacing: -0.5,
-        ),
-        titleMedium: TextStyle(
-          fontSize: AppDimensions.fontXXL,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
-        titleSmall: TextStyle(
-          fontSize: AppDimensions.fontXL,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
-        bodyLarge: TextStyle(
-          fontSize: AppDimensions.fontLarge,
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w500,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: AppDimensions.fontMedium,
-          color: AppColors.textSecondary,
-          fontWeight: FontWeight.w400,
-        ),
-        bodySmall: TextStyle(
-          fontSize: AppDimensions.fontSmall,
-          color: AppColors.textMuted,
-          fontWeight: FontWeight.w400,
-        ),
-        labelLarge: TextStyle(
-          fontSize: AppDimensions.fontLarge,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
+      textTheme: _textTheme(
+        primary: AppColors.textPrimary,
+        secondary: AppColors.textSecondary,
+        muted: AppColors.textMuted,
       ),
     );
   }
@@ -353,49 +315,129 @@ class AppTheme {
           fontSize: AppDimensions.fontMedium,
         ),
       ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
-          fontSize: AppDimensions.fontDisplay,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          letterSpacing: -1,
-        ),
-        titleLarge: TextStyle(
-          fontSize: AppDimensions.fontTitle,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
-          letterSpacing: -0.5,
-        ),
-        titleMedium: TextStyle(
-          fontSize: AppDimensions.fontXXL,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-        titleSmall: TextStyle(
-          fontSize: AppDimensions.fontXL,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-        bodyLarge: TextStyle(
-          fontSize: AppDimensions.fontLarge,
-          color: Colors.white,
-          fontWeight: FontWeight.w500,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: AppDimensions.fontMedium,
-          color: Colors.white70,
-          fontWeight: FontWeight.w400,
-        ),
-        bodySmall: TextStyle(
-          fontSize: AppDimensions.fontSmall,
-          color: Colors.white60,
-          fontWeight: FontWeight.w400,
-        ),
-        labelLarge: TextStyle(
-          fontSize: AppDimensions.fontLarge,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
+      textTheme: _textTheme(
+        primary: Colors.white,
+        secondary: Colors.white70,
+        muted: Colors.white60,
+      ),
+    );
+  }
+
+  /// The app's type scale, shared by the light and dark themes.
+  ///
+  /// Nunito (rounded) carries every role. Body copy gets a real line height so
+  /// paragraphs breathe, headings get negative tracking so large text stays
+  /// tight, small labels get positive tracking, and every role opts into
+  /// tabular figures so the day counts, statistics and predictions that fill
+  /// the app never jitter as their digits change.
+  static TextTheme _textTheme({
+    required Color primary,
+    required Color secondary,
+    required Color muted,
+  }) {
+    const features = [FontFeature.tabularFigures()];
+    return TextTheme(
+      displayLarge: TextStyle(
+        fontSize: AppDimensions.fontDisplay,
+        fontWeight: FontWeight.w800,
+        color: primary,
+        letterSpacing: -1,
+        height: 1.1,
+        fontFeatures: features,
+      ),
+      displayMedium: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
+        color: primary,
+        letterSpacing: -0.75,
+        height: 1.15,
+        fontFeatures: features,
+      ),
+      headlineLarge: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
+        color: primary,
+        letterSpacing: -0.5,
+        height: 1.2,
+        fontFeatures: features,
+      ),
+      headlineMedium: TextStyle(
+        fontSize: AppDimensions.fontTitle,
+        fontWeight: FontWeight.w800,
+        color: primary,
+        letterSpacing: -0.5,
+        height: 1.2,
+        fontFeatures: features,
+      ),
+      headlineSmall: TextStyle(
+        fontSize: AppDimensions.fontXXL,
+        fontWeight: FontWeight.w700,
+        color: primary,
+        letterSpacing: -0.35,
+        height: 1.2,
+        fontFeatures: features,
+      ),
+      titleLarge: TextStyle(
+        fontSize: AppDimensions.fontTitle,
+        fontWeight: FontWeight.w700,
+        color: primary,
+        letterSpacing: -0.5,
+        height: 1.2,
+        fontFeatures: features,
+      ),
+      titleMedium: TextStyle(
+        fontSize: AppDimensions.fontXXL,
+        fontWeight: FontWeight.w700,
+        color: primary,
+        letterSpacing: -0.25,
+        fontFeatures: features,
+      ),
+      titleSmall: TextStyle(
+        fontSize: AppDimensions.fontXL,
+        fontWeight: FontWeight.w600,
+        color: primary,
+        fontFeatures: features,
+      ),
+      bodyLarge: TextStyle(
+        fontSize: AppDimensions.fontLarge,
+        color: primary,
+        fontWeight: FontWeight.w500,
+        height: 1.4,
+        fontFeatures: features,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: AppDimensions.fontMedium,
+        color: secondary,
+        fontWeight: FontWeight.w400,
+        height: 1.45,
+        fontFeatures: features,
+      ),
+      bodySmall: TextStyle(
+        fontSize: AppDimensions.fontSmall,
+        color: muted,
+        fontWeight: FontWeight.w400,
+        height: 1.4,
+        fontFeatures: features,
+      ),
+      labelLarge: TextStyle(
+        fontSize: AppDimensions.fontLarge,
+        fontWeight: FontWeight.w600,
+        color: primary,
+        fontFeatures: features,
+      ),
+      labelMedium: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: secondary,
+        letterSpacing: 0.2,
+        fontFeatures: features,
+      ),
+      labelSmall: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: muted,
+        letterSpacing: 0.5,
+        fontFeatures: features,
       ),
     );
   }
@@ -421,27 +463,37 @@ class AppTheme {
   }
 }
 
-/// Material 3's default push zooms the whole page. These clay cards read better
-/// arriving the way they do on a tab change, so every platform shares one
-/// transition and the motion stays the same wherever you came from.
+/// Every platform shares one push transition: the iOS-style horizontal slide,
+/// where a pushed page arrives from the trailing edge and a popped page slides
+/// back out. The builder Flutter installs alongside it also wires up the
+/// interactive back-swipe, so dragging in from the screen edge keeps the page
+/// glued to the finger instead of playing a fixed animation.
 const PageTransitionsTheme _pageTransitions = PageTransitionsTheme(
   builders: {
-    TargetPlatform.android: _FadeRisePageTransitionsBuilder(),
-    TargetPlatform.iOS: _FadeRisePageTransitionsBuilder(),
-    TargetPlatform.macOS: _FadeRisePageTransitionsBuilder(),
-    TargetPlatform.windows: _FadeRisePageTransitionsBuilder(),
-    TargetPlatform.linux: _FadeRisePageTransitionsBuilder(),
-    TargetPlatform.fuchsia: _FadeRisePageTransitionsBuilder(),
+    TargetPlatform.android: _SlideBackPageTransitionsBuilder(),
+    TargetPlatform.iOS: _SlideBackPageTransitionsBuilder(),
+    TargetPlatform.macOS: _SlideBackPageTransitionsBuilder(),
+    TargetPlatform.windows: _SlideBackPageTransitionsBuilder(),
+    TargetPlatform.linux: _SlideBackPageTransitionsBuilder(),
+    TargetPlatform.fuchsia: _SlideBackPageTransitionsBuilder(),
   },
 );
 
-/// Fades a pushed page in while it rises a short way.
-///
-/// Mirrors the card entrance so moving into a page and arriving at its cards
-/// feel like one motion. Honours the OS "reduce motion" setting by dropping the
-/// transition entirely.
-class _FadeRisePageTransitionsBuilder extends PageTransitionsBuilder {
-  const _FadeRisePageTransitionsBuilder();
+/// [CupertinoPageTransitionsBuilder] (the iOS slide plus the finger-tracking
+/// back gesture) with one addition: when the OS asks for reduced motion the
+/// page is handed straight through, matching the rest of the app.
+class _SlideBackPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _SlideBackPageTransitionsBuilder();
+
+  static const CupertinoPageTransitionsBuilder _cupertino =
+      CupertinoPageTransitionsBuilder();
+
+  @override
+  Duration get transitionDuration => _cupertino.transitionDuration;
+
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition =>
+      _cupertino.delegatedTransition;
 
   @override
   Widget buildTransitions<T>(
@@ -452,22 +504,12 @@ class _FadeRisePageTransitionsBuilder extends PageTransitionsBuilder {
     Widget child,
   ) {
     if (MediaQuery.disableAnimationsOf(context)) return child;
-
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
-
-    return FadeTransition(
-      opacity: curved,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.04),
-          end: Offset.zero,
-        ).animate(curved),
-        child: child,
-      ),
+    return _cupertino.buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
     );
   }
 }

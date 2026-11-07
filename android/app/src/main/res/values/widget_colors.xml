@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="floii_widget_surface">#FFFFFFFF</color>
+    <color name="floii_widget_button_period">#FFEC4899</color>
+    <color name="floii_widget_button_mood">#FF8B5CF6</color>
+</resources>

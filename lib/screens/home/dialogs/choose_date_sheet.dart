@@ -9,8 +9,8 @@ import '../../../widgets/common/cards.dart';
 /// Start-date picker for adding a cycle. The start date is chosen with an
 /// effectively infinite vertical date wheel (the day indices wrap modulo a
 /// 2000–2100 century, repeated across many cycles), so it can be scrolled
-/// months or years in either direction. Duration is picked with the same
-/// 5/6/7-day chips as the period editor and saved via [onSave].
+/// months or years in either direction. Duration is picked with a slider and
+/// saved via [onSave].
 class ChooseDateSheet extends StatefulWidget {
   final DateTime initialDate;
   final int defaultMenstrualDays;
@@ -53,7 +53,7 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
   void initState() {
     super.initState();
     selectedDate = widget.initialDate;
-    menstrualDays = widget.defaultMenstrualDays;
+    menstrualDays = widget.defaultMenstrualDays.clamp(2, 8);
     _controller = FixedExtentScrollController(
       initialItem: _indexForDate(widget.initialDate),
     );
@@ -308,9 +308,11 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
       color: isDark
           ? Colors.white.withValues(alpha: 0.05)
           : theme.colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.all(AppDimensions.elementSpacing),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.elementSpacing,
+        vertical: AppDimensions.smallSpacing,
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.timer,
@@ -324,68 +326,20 @@ class _ChooseDateSheetState extends State<ChooseDateSheet> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: AppDimensions.elementSpacing),
-          ...List.generate(3, (index) {
-            final days = 5 + index;
-            final isSelected = menstrualDays == days;
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    menstrualDays = days;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.elementSpacing,
-                    vertical: AppDimensions.smallSpacing,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primary
-                        : theme.colorScheme.surface,
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusMedium),
-                    boxShadow: isDark
-                        ? []
-                        : isSelected
-                            ? [
-                                BoxShadow(
-                                  color:
-                                      AppColors.primary.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ]
-                            : [
-                                BoxShadow(
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                  blurRadius: 3,
-                                  offset: const Offset(-2, -2),
-                                ),
-                                BoxShadow(
-                                  color: AppColors.clayShadow
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 3,
-                                  offset: const Offset(2, 2),
-                                ),
-                              ],
-                  ),
-                  child: Text(
-                    '$days',
-                    style: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
+          Expanded(
+            child: Slider(
+              value: menstrualDays.toDouble(),
+              min: 2,
+              max: 8,
+              divisions: 6,
+              label: '$menstrualDays',
+              onChanged: (val) {
+                setState(() {
+                  menstrualDays = val.round();
+                });
+              },
+            ),
+          ),
         ],
       ),
     );

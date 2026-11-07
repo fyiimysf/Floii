@@ -8,11 +8,10 @@ import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../widgets/common/cards.dart';
-import '../../widgets/common/floating_tab_bar.dart';
 import '../../widgets/common/top_toast.dart';
 
 /// Dedicated, in-depth notification settings: the user decides exactly which
-/// reminders they want (period, mood logging, ovulation date, phase change)
+/// reminders they want (period, mood logging, ovulation date, phase change),z
 /// and when.
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});

@@ -6,6 +6,7 @@ import '../../utils/constants/dimensions.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../utils/learn_markup.dart';
 import '../../widgets/common/cards.dart';
+import '../../widgets/common/learn_section_block.dart';
 
 /// Full text of a single Learn article. Reached from [LearnScreen].
 class LearnTopicScreen extends StatelessWidget {
@@ -71,7 +72,7 @@ class LearnTopicScreen extends StatelessWidget {
 
                 // The opening summary is laid out like a section rather than a
                 // card, so the page reads as one continuous document.
-                _SectionBlock(
+                LearnSectionBlock(
                   heading: context.tr('learnInShort'),
                   accent: topic.color,
                   body: article.summary,
@@ -84,7 +85,7 @@ class LearnTopicScreen extends StatelessWidget {
 
                 for (final section in article.sections) ...[
                   const SizedBox(height: AppDimensions.sectionSpacing),
-                  _SectionBlock(
+                  LearnSectionBlock(
                     heading: section.heading,
                     accent: topic.color,
                     paragraphs: section.paragraphs,
@@ -96,78 +97,6 @@ class LearnTopicScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// A heading marked by a short accent bar, followed by its body text. Shared
-/// by the opening summary and by every article section so they look alike.
-class _SectionBlock extends StatelessWidget {
-  const _SectionBlock({
-    required this.heading,
-    required this.accent,
-    this.body,
-    this.paragraphs = const [],
-  });
-
-  final String heading;
-  final Color accent;
-
-  /// Single-paragraph body, used by the opening summary.
-  final String? body;
-
-  final List<String> paragraphs;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final bodyStyle = theme.textTheme.bodyMedium!.copyWith(
-      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-      height: 1.5,
-    );
-
-    final lines = body != null ? <String>[body!] : paragraphs;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 3,
-              height: 18,
-              margin: const EdgeInsets.only(top: 3),
-              decoration: BoxDecoration(
-                color: accent,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: AppDimensions.smallSpacing + 2),
-            Expanded(
-              child: Text(
-                heading,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppDimensions.smallSpacing),
-        Padding(
-          padding: const EdgeInsets.only(left: 11),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var i = 0; i < lines.length; i++) ...[
-                if (i > 0) const SizedBox(height: AppDimensions.smallSpacing),
-                learnRichText(lines[i], style: bodyStyle, accent: accent),
-              ],
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

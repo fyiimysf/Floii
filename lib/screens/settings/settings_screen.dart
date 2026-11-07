@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
@@ -17,8 +18,8 @@ import '../../utils/constants/colors.dart';
 import '../../utils/constants/dimensions.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../widgets/common/cards.dart';
+import '../../widgets/common/download_apk_card.dart';
 import '../../widgets/dialogs/clay_dialog.dart';
-import '../../widgets/common/floating_tab_bar.dart';
 import '../../widgets/common/hold_to_confirm.dart';
 import '../home/dialogs/menstrual_settings_dialog.dart';
 
@@ -497,6 +498,10 @@ class SettingsScreenState extends State<SettingsScreen> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 const SizedBox(height: AppDimensions.elementSpacing),
+                if (kIsWeb) ...[
+                  const DownloadApkCard(),
+                  const SizedBox(height: AppDimensions.sectionSpacing),
+                ],
                 _buildSectionHeader(context, context.tr('general'), Icons.tune),
                 const SizedBox(height: AppDimensions.elementSpacing),
                 ClayCard(
@@ -637,11 +642,43 @@ class SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 const SizedBox(height: AppDimensions.sectionSpacing),
+                _buildSectionHeader(
+                    context, context.tr('legal'), Icons.gavel_outlined,
+                    color: AppColors.secondaryLight),
+                const SizedBox(height: AppDimensions.elementSpacing),
+                ClayCard(
+                  entranceStep: 3,
+                  child: Column(
+                    children: [
+                      _buildSettingTile(context,
+                          icon: Icons.privacy_tip_outlined,
+                          iconColor: AppColors.primary,
+                          title: context.tr('privacyPolicy'),
+                          subtitle: context.tr('privacyPolicySubtitle'),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/privacy-policy'),
+                          onChanged: (e) {}),
+                      Divider(
+                        height: 1,
+                        indent: 0,
+                        color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                      ),
+                      _buildSettingTile(context,
+                          icon: Icons.gavel_outlined,
+                          iconColor: AppColors.secondary,
+                          title: context.tr('termsAndConditions'),
+                          subtitle: context.tr('termsConditionsSubtitle'),
+                          onTap: () => Navigator.pushNamed(context, '/terms'),
+                          onChanged: (e) {}),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppDimensions.sectionSpacing),
                 _buildSectionHeader(context, context.tr('data'), Icons.storage,
                     color: AppColors.secondary),
                 const SizedBox(height: AppDimensions.elementSpacing),
                 ClayCard(
-                  entranceStep: 3,
+                  entranceStep: 4,
                   child: Column(
                     children: [
                       _buildSettingTile(context,
@@ -674,7 +711,7 @@ class SettingsScreenState extends State<SettingsScreen> {
                     color: AppColors.error),
                 const SizedBox(height: AppDimensions.elementSpacing),
                 ClayCard(
-                  entranceStep: 4,
+                  entranceStep: 5,
                   color: AppColors.error.withValues(alpha: 0.05),
                   child: _buildSettingTile(context,
                       icon: Icons.delete_forever,

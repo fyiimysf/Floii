@@ -177,7 +177,7 @@ class PhaseService {
           currentCycle.startDate.add(Duration(days: periodLength - 1));
       ovulationStart = ovulationDate.subtract(const Duration(days: 1));
       ovulationEnd = ovulationDate.add(const Duration(days: 1));
-      lutealEnd = ovulationDate.add(const Duration(days: 14));
+      lutealEnd = ovulationDate.add(const Duration(days: 13));
     } else {
       menstrualEnd =
           currentCycle.startDate.add(Duration(days: periodLength - 1));

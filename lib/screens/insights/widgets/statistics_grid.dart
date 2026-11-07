@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:floi/utils/extensions/localization_extension.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:hugeicons/hugeicons.dart';
 import '../../../services/cycle/cycle_analytics_service.dart';
 import '../../../services/cycle/cycle_calculation_service.dart';
@@ -12,16 +13,73 @@ import '../../../utils/constants/dimensions.dart';
 import '../../../utils/responsive.dart';
 import '../../../widgets/common/section_header.dart';
 
-/// Dense grid of cycle metrics inside one card: averages, spread and
+/// Dense row of cycle metrics inside one card: averages, spread and
 /// regularity — the numbers that actually explain a cycle at a glance.
-/// Two columns on narrow screens, three once the tiles have room.
-class StatisticsGrid extends StatelessWidget {
+///
+/// The tiles scroll horizontally on their own, looping seamlessly, so the row
+/// stays a single compact band instead of growing into a taller grid. Touching
+/// the row pauses the drift so a tile can be read or swiped manually.
+class StatisticsGrid extends StatefulWidget {
   final Map<String, dynamic> stats;
 
   const StatisticsGrid({super.key, required this.stats});
 
   @override
+  State<StatisticsGrid> createState() => _StatisticsGridState();
+}
+
+class _StatisticsGridState extends State<StatisticsGrid>
+    with SingleTickerProviderStateMixin {
+  /// Slow enough to read, fast enough that the row is visibly alive.
+  static const double _pixelsPerSecond = 16;
+
+  final ScrollController _controller = ScrollController();
+  late final Ticker _ticker;
+
+  Duration _lastElapsed = Duration.zero;
+  bool _paused = false;
+
+  /// Width of one full set of tiles (including the trailing gap). The row is
+  /// rendered twice and rewound by this amount, so the loop has no visible seam.
+  double _loopWidth = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_onTick)..start();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTick(Duration elapsed) {
+    final delta = elapsed - _lastElapsed;
+    _lastElapsed = elapsed;
+    if (_paused || !_controller.hasClients) return;
+
+    final position = _controller.position;
+    final maxExtent = position.maxScrollExtent;
+    if (maxExtent <= 0 || _loopWidth <= 0) return;
+
+    final dt = delta.inMicroseconds / Duration.microsecondsPerSecond;
+    if (dt <= 0) return;
+
+    var next = position.pixels + _pixelsPerSecond * dt;
+    if (next >= _loopWidth) {
+      next -= _loopWidth;
+    } else if (next > maxExtent) {
+      next = maxExtent;
+    }
+    _controller.jumpTo(next);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final stats = widget.stats;
     final periods = stats['periods'] as List<List<DateTime>>? ?? [];
     final isCompact = context.isCompactScreen;
 
@@ -45,6 +103,49 @@ class StatisticsGrid extends StatelessWidget {
         ? ((analytics['consistency'] as int?) ??
             CycleCalculationService.calculateConsistency(cycleLengths))
         : null;
+
+    final tiles = <Widget>[
+      _MetricTile(
+        label: context.tr('averageCycle'),
+        value: '$avgCycle',
+        suffix: context.tr('days'),
+        compact: isCompact,
+      ),
+      _MetricTile(
+        label: context.tr('avgPeriod'),
+        value: '$avgPeriod',
+        suffix: context.tr('days'),
+        compact: isCompact,
+      ),
+      _MetricTile(
+        label: context.tr('medianCycle'),
+        value: median?.toString() ?? '--',
+        suffix: median != null ? context.tr('days') : null,
+        compact: isCompact,
+      ),
+      _MetricTile(
+        label: context.tr('cycleConsistency'),
+        value: consistency?.toString() ?? '--',
+        suffix: consistency != null ? '%' : null,
+        compact: isCompact,
+      ),
+      _MetricTile(
+        label: context.tr('periodsLogged'),
+        value: '$count',
+        compact: isCompact,
+      ),
+      _MetricTile(
+        label: context.tr('cycleRange'),
+        value: (hasCycles && minCycle != null && maxCycle != null)
+            ? '$minCycle–$maxCycle'
+            : '--',
+        suffix: hasCycles ? context.tr('days') : null,
+        compact: isCompact,
+      ),
+    ];
+
+    final tileWidth = context.scaleLength(118, min: 0.85, max: 1.15);
+    _loopWidth = tiles.length * (tileWidth + AppDimensions.smallSpacing);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -92,58 +193,31 @@ class StatisticsGrid extends StatelessWidget {
         ],
         MediaQuery.withClampedTextScaling(
           maxScaleFactor: 1.3,
-          child: GridView(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              // Two-up on narrow phones, three across once the tiles are
-              // wide enough to read as inline rows.
-              crossAxisCount: context.screenSize.gridColumns,
-              // Narrow screens get taller tiles because their labels wrap to
-              // a second line instead of being clipped.
-              mainAxisExtent: isCompact ? 86 : 76,
-              mainAxisSpacing: AppDimensions.smallSpacing,
-              crossAxisSpacing: AppDimensions.elementSpacing,
+          child: SizedBox(
+            height: isCompact ? 86 : 76,
+            child: Listener(
+              // Reading wins over motion: a touch anywhere on the row parks the
+              // drift until the finger lifts, so tiles can be read or swiped.
+              onPointerDown: (_) => _paused = true,
+              onPointerUp: (_) => _paused = false,
+              onPointerCancel: (_) => _paused = false,
+              child: ListView.separated(
+                key: const Key('statistics_scroll'),
+                controller: _controller,
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.zero,
+                // Rendered twice so the ticker can rewind by one set without a
+                // visible seam at the loop point.
+                itemCount: tiles.length * 2,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(width: AppDimensions.smallSpacing),
+                itemBuilder: (context, index) => SizedBox(
+                  width: tileWidth,
+                  child: tiles[index % tiles.length],
+                ),
+              ),
             ),
-            children: [
-              _MetricTile(
-                label: context.tr('averageCycle'),
-                value: '$avgCycle',
-                suffix: context.tr('days'),
-                compact: isCompact,
-              ),
-              _MetricTile(
-                label: context.tr('avgPeriod'),
-                value: '$avgPeriod',
-                suffix: context.tr('days'),
-                compact: isCompact,
-              ),
-              _MetricTile(
-                label: context.tr('medianCycle'),
-                value: median?.toString() ?? '--',
-                suffix: median != null ? context.tr('days') : null,
-                compact: isCompact,
-              ),
-              _MetricTile(
-                label: context.tr('cycleConsistency'),
-                value: consistency?.toString() ?? '--',
-                suffix: consistency != null ? '%' : null,
-                compact: isCompact,
-              ),
-              _MetricTile(
-                label: context.tr('periodsLogged'),
-                value: '$count',
-                compact: isCompact,
-              ),
-              _MetricTile(
-                label: context.tr('cycleRange'),
-                value: (hasCycles && minCycle != null && maxCycle != null)
-                    ? '$minCycle–$maxCycle'
-                    : '--',
-                suffix: hasCycles ? context.tr('days') : null,
-                compact: isCompact,
-              ),
-            ],
           ),
         ),
       ],

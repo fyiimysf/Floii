@@ -70,12 +70,8 @@ List<String> truncatedText(WidgetTester tester) {
   return out.toList()..sort();
 }
 
-int _gridColumns(WidgetTester tester) {
-  final grid = tester.widget<GridView>(find.byType(GridView).first);
-  final delegate =
-      grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-  return delegate.crossAxisCount;
-}
+ListView _statisticsList(WidgetTester tester) =>
+    tester.widget<ListView>(find.byKey(const Key('statistics_scroll')));
 
 void main() {
   group('ScreenSize bucketing', () {
@@ -102,8 +98,8 @@ void main() {
     });
   });
 
-  group('insights grid columns', () {
-    testWidgets('two columns on a small screen', (tester) async {
+  group('insights statistics row', () {
+    testWidgets('scrolls horizontally on a small screen', (tester) async {
       await tester.runAsync(openBoxes);
       addTearDown(() async => Hive.close());
       setPhoneSize(tester, const Size(320, 640));
@@ -112,10 +108,10 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
       expect(tester.takeException(), isNull);
-      expect(_gridColumns(tester), 2);
+      expect(_statisticsList(tester).scrollDirection, Axis.horizontal);
     });
 
-    testWidgets('three columns on a larger screen', (tester) async {
+    testWidgets('auto-scrolls as time passes', (tester) async {
       await tester.runAsync(openBoxes);
       addTearDown(() async => Hive.close());
       setPhoneSize(tester, const Size(430, 900));
@@ -124,7 +120,11 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
       expect(tester.takeException(), isNull);
-      expect(_gridColumns(tester), 3);
+
+      final controller = _statisticsList(tester).controller!;
+      final start = controller.offset;
+      await tester.pump(const Duration(seconds: 1));
+      expect(controller.offset, greaterThan(start));
     });
   });
 

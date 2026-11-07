@@ -78,4 +78,68 @@ void main() {
     expect(find.byType(CycleDayCell), findsWidgets);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('year action opens a wheel dial, not a grid', (tester) async {
+    await pumpYearView(tester);
+
+    await tester.tap(
+      find.widgetWithText(TextButton, '${DateTime.now().year}'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('selectYear'), findsOneWidget);
+    expect(find.byType(ListWheelScrollView), findsOneWidget);
+    expect(find.text('confirm'), findsOneWidget);
+    expect(find.text('cancel'), findsOneWidget);
+  });
+
+  testWidgets('confirming the dial applies the selected year', (tester) async {
+    await pumpYearView(tester);
+    final thisYear = DateTime.now().year;
+
+    await tester.tap(find.widgetWithText(TextButton, '$thisYear'));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListWheelScrollView), const Offset(0, -56));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('confirm'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(SliverAppBar),
+        matching: find.text('${thisYear + 1}'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('reset returns the dial to the current year', (tester) async {
+    await pumpYearView(tester);
+    final thisYear = DateTime.now().year;
+
+    await tester.tap(find.widgetWithText(TextButton, '$thisYear'));
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byType(ListWheelScrollView),
+      const Offset(0, -56 * 3),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.refresh_rounded));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('confirm'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(SliverAppBar),
+        matching: find.text('$thisYear'),
+      ),
+      findsOneWidget,
+    );
+  });
 }

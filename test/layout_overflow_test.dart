@@ -3,8 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:floi/content/legal/legal_content.dart';
 import 'package:floi/models/cycle_models.dart';
 import 'package:floi/screens/insights/insights_screen.dart';
+import 'package:floi/screens/settings/legal_document_screen.dart';
+import 'package:floi/utils/constants/colors.dart';
 import 'package:floi/screens/home/home_screen.dart';
 import 'package:floi/screens/settings/settings_screen.dart';
 import 'package:floi/screens/settings/about_screen.dart';
@@ -66,6 +69,20 @@ void main() {
     'feedback': () => const FeedbackScreen(),
     'notifications': () => const NotificationsScreen(),
     'trends': () => TrendsScreen(stats: makeStats()),
+    'privacyPolicy': () => LegalDocumentScreen(
+          document: LegalContent.privacyPolicy('en'),
+          title: 'Privacy Policy',
+          icon: Icons.privacy_tip_outlined,
+          accent: AppColors.primary,
+          lastUpdated: 'February 2026',
+        ),
+    'terms': () => LegalDocumentScreen(
+          document: LegalContent.termsAndConditions('en'),
+          title: 'Terms & Conditions',
+          icon: Icons.gavel_outlined,
+          accent: AppColors.secondary,
+          lastUpdated: 'February 2026',
+        ),
   };
 
   for (final size in const [Size(320, 640), Size(390, 844)]) {

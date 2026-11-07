@@ -139,6 +139,13 @@ class CycleYearViewState extends State<CycleYearView> {
     );
   }
 
+  void _openCycleHistory() {
+    Navigator.of(context).pushNamed(
+      '/cycle-history',
+      arguments: _currentStats,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final stats = _currentStats;
@@ -146,9 +153,6 @@ class CycleYearViewState extends State<CycleYearView> {
       _lastStats = stats;
       _recomputePredictions();
     }
-
-    final periods =
-        (stats['periods'] as List<List<DateTime>>? ?? []).reversed.toList();
 
     return CustomScrollView(
       controller: _scrollController,
@@ -171,8 +175,16 @@ class CycleYearViewState extends State<CycleYearView> {
             elevation: 0,
             scrolledUnderElevation: 0,
             // backgroundColor: AppColors.cardDark.withAlpha(200),
+            leading: IconButton(
+              onPressed: _openCycleHistory,
+              tooltip: context.tr('cycleHistory'),
+              icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedClock05,
+                color: AppColors.primary,
+                size: 24,
+              ),
+            ),
             actions: [
-              // IconButton(onPressed: _openYearPicker, icon: HugeIcon(icon:  HugeIcons.strokeRoundedCalendar03, color: AppColors.primary, size: 26,)),
               TextButton(
                   onPressed: _openYearPicker,
                   child: Text(
@@ -219,19 +231,6 @@ class CycleYearViewState extends State<CycleYearView> {
                       onTap: () => _openMonth(DateTime(_year, m, 1)),
                     ),
                   ),
-                if (periods.isNotEmpty) ...[
-                  const SizedBox(height: AppDimensions.smallSpacing),
-                  SectionHeader(
-                    title: context.tr('cycleHistory'),
-                    icon: HugeIcons.strokeRoundedClock05,
-                    caption: context.tr('cycleHistoryCaption'),
-                  ),
-                  ...periods.map((p) => Padding(
-                        padding: const EdgeInsets.only(
-                            bottom: AppDimensions.smallSpacing),
-                        child: _CycleTile(period: p),
-                      )),
-                ],
                 const SizedBox(height: AppDimensions.sectionSpacing * 2),
               ],
             ),
@@ -242,7 +241,10 @@ class CycleYearViewState extends State<CycleYearView> {
   }
 }
 
-class _YearPickerSheet extends StatelessWidget {
+/// A vertical wheel/dial for picking a year, styled after the date wheel in
+/// [ChooseDateSheet]. Scroll to bring a year under the centre band, then
+/// confirm to jump the year view to it.
+class _YearPickerSheet extends StatefulWidget {
   final int selectedYear;
   final int currentYear;
   final ValueChanged<int> onYearSelected;
@@ -253,96 +255,239 @@ class _YearPickerSheet extends StatelessWidget {
   });
 
   @override
+  State<_YearPickerSheet> createState() => _YearPickerSheetState();
+}
+
+class _YearPickerSheetState extends State<_YearPickerSheet> {
+  static const int _firstYear = 2000;
+  static const int _lastYear = 2100;
+  static const double _itemExtent = 56;
+
+  late final FixedExtentScrollController _controller;
+  late int _selectedYear;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedYear = widget.selectedYear;
+    _controller = FixedExtentScrollController(
+      initialItem: widget.selectedYear - _firstYear,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _apply() {
+    Navigator.pop(context);
+    widget.onYearSelected(_selectedYear);
+  }
+
+  void _resetToCurrentYear() {
+    setState(() => _selectedYear = widget.currentYear);
+    _controller.animateToItem(
+      widget.currentYear - _firstYear,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const firstYear = 2000;
-    const lastYear = 2100;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppDimensions.radiusXL),
         ),
       ),
-      child: Column(
-        children: [
-          const SizedBox(height: AppDimensions.elementSpacing),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: AppDimensions.elementSpacing),
-          Text(
-            context.tr('selectYear'),
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: AppDimensions.elementSpacing),
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.screenPadding),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: AppDimensions.smallSpacing,
-                crossAxisSpacing: AppDimensions.smallSpacing,
-                childAspectRatio: 1.4,
+      padding: const EdgeInsets.only(top: AppDimensions.elementSpacing),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
               ),
-              itemCount: lastYear - firstYear + 1,
-              itemBuilder: (context, index) {
-                final year = firstYear + index;
-                final isSelected = year == selectedYear;
-                final isCurrentYear = year == currentYear;
-                return ClayButton(
-                  onTap: () {
-                    Navigator.pop(context);
-                    onYearSelected(year);
-                  },
-                  color: isSelected
-                      ? AppColors.today
-                      : theme.colorScheme.surfaceContainerHighest,
-                  padding: EdgeInsets.zero,
-                  radius: AppDimensions.radiusSmall,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$year',
-                        style: TextStyle(
-                          fontWeight:
-                              isSelected ? FontWeight.w800 : FontWeight.w600,
-                          color: isSelected
-                              ? Colors.white
-                              : theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      if (isCurrentYear) ...[
-                        const SizedBox(height: 4),
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : AppColors.today,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
-                    ],
+            ),
+            const SizedBox(height: AppDimensions.elementSpacing),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Text(
+                  context.tr('selectYear'),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
                   ),
-                );
-              },
+                ),
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                        right: AppDimensions.smallSpacing),
+                    child: IconButton(
+                      onPressed: _resetToCurrentYear,
+                      tooltip: context.tr('reset'),
+                      icon: const Icon(Icons.refresh_rounded),
+                      color: AppColors.today,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppDimensions.smallSpacing),
+            _buildDial(theme),
+            const SizedBox(height: AppDimensions.elementSpacing),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.cardPadding),
+              child: _buildActions(),
+            ),
+            const SizedBox(height: AppDimensions.elementSpacing),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDial(ThemeData theme) {
+    final count = _lastYear - _firstYear + 1;
+
+    return SizedBox(
+      height: _itemExtent * 5,
+      child: Stack(
+        children: [
+          // Centre band marking the year currently under the wheel's focus.
+          Positioned(
+            top: _itemExtent * 2,
+            left: AppDimensions.smallSpacing,
+            right: AppDimensions.smallSpacing,
+            height: _itemExtent,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.today.withValues(alpha: 0.12),
+                  borderRadius:
+                      BorderRadius.circular(AppDimensions.radiusMedium),
+                  border: Border.all(
+                    color: AppColors.today.withValues(alpha: 0.4),
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: AppDimensions.sectionSpacing),
+          ListWheelScrollView.useDelegate(
+            controller: _controller,
+            itemExtent: _itemExtent,
+            physics: const FixedExtentScrollPhysics(),
+            diameterRatio: 2.0,
+            squeeze: 0.95,
+            overAndUnderCenterOpacity: 0.3,
+            onSelectedItemChanged: (index) {
+              setState(() => _selectedYear = _firstYear + index);
+            },
+            childDelegate: ListWheelChildBuilderDelegate(
+              childCount: count,
+              builder: (context, index) => _buildYearRow(_firstYear + index),
+            ),
+          ),
+          // Fade the rows into the sheet at the top and bottom edges.
+          _buildFade(theme, top: true),
+          _buildFade(theme, top: false),
         ],
       ),
+    );
+  }
+
+  Widget _buildFade(ThemeData theme, {required bool top}) {
+    return Positioned(
+      left: 0,
+      right: 0,
+      top: top ? 0 : null,
+      bottom: top ? null : 0,
+      height: _itemExtent * 2,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: top ? Alignment.topCenter : Alignment.bottomCenter,
+              end: top ? Alignment.bottomCenter : Alignment.topCenter,
+              colors: [
+                theme.colorScheme.surface,
+                theme.colorScheme.surface.withValues(alpha: 0),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildYearRow(int year) {
+    final theme = Theme.of(context);
+    final isCurrent = year == widget.currentYear;
+
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$year',
+            style: TextStyle(
+              fontSize: AppDimensions.fontXL,
+              fontWeight: FontWeight.w800,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          if (isCurrent) ...[
+            const SizedBox(width: AppDimensions.smallSpacing),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: AppColors.today,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActions() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.tr('cancel')),
+          ),
+        ),
+        const SizedBox(width: AppDimensions.smallSpacing),
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(
+                  vertical: AppDimensions.elementSpacing),
+            ),
+            onPressed: _apply,
+            child: Text(
+              context.tr('confirm'),
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -845,92 +990,6 @@ class _MonthDetailSheetState extends State<MonthDetailSheet> {
 
     events.sort((a, b) => a.start.compareTo(b.start));
     return events;
-  }
-}
-
-class _CycleTile extends StatelessWidget {
-  final List<DateTime> period;
-
-  const _CycleTile({required this.period});
-
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  String _fmt(DateTime d) => '${_months[d.month - 1]} ${d.day}, ${d.year}';
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final start = period.first;
-    final end = period.last;
-    final isOngoing = DateTime.now().isBetween(start, end);
-
-    return ClayCard(
-      entranceStep: 0,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.elementSpacing,
-        vertical: AppDimensions.elementSpacing,
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppDimensions.smallSpacing),
-            decoration: BoxDecoration(
-              color: AppColors.period.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedDroplet,
-              color: AppColors.period,
-              size: AppDimensions.iconMedium,
-            ),
-          ),
-          const SizedBox(width: AppDimensions.elementSpacing),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${_fmt(start)}  -  ${_fmt(end)}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.tinySpacing),
-                Text(
-                  isOngoing
-                      ? context.tr('current')
-                      : '${context.tr('periodLength')}: ${period.length} ${context.tr('days')}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: isOngoing
-                        ? AppColors.period
-                        : theme.colorScheme.onSurfaceVariant,
-                    fontWeight: isOngoing ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          PhaseChip(
-            label: '${period.length}d',
-            color: isOngoing ? AppColors.period : AppColors.fertile,
-            isActive: isOngoing,
-          ),
-        ],
-      ),
-    );
   }
 }
 

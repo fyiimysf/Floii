@@ -215,6 +215,10 @@ class HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() {});
   }
 
+  /// Opens the mood picker from outside the widget tree, used when a tap on the
+  /// home-screen widget's "Log mood" button deep-links into the app.
+  void openMoodPicker() => _showMoodPicker();
+
   /// Mood selection lives in its own sheet, opened from the status card's mood
   /// button, instead of a permanent card in the scroll view.
   Future<void> _showMoodPicker() async {

@@ -4,6 +4,8 @@ import '../../utils/constants/dimensions.dart';
 import '../../utils/extensions/localization_extension.dart';
 import '../../widgets/common/cards.dart';
 
+/// Help & FAQ: the questions users ask most, grouped into Learn-style sections,
+/// with a closing card that routes to Send Feedback.
 class HelpFaqScreen extends StatelessWidget {
   const HelpFaqScreen({super.key});
 
@@ -16,7 +18,9 @@ class HelpFaqScreen extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
-            expandedHeight: 100,
+            expandedHeight: 70,
+            collapsedHeight: 70,
+            toolbarHeight: 70,
             floating: false,
             pinned: true,
             elevation: 0,
@@ -25,10 +29,10 @@ class HelpFaqScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 spacing: AppDimensions.tinySpacing,
                 children: [
-                  Icon(
-                    Icons.help_outline,
+                  const Icon(
+                    Icons.help_outline_rounded,
                     color: AppColors.secondary,
-                    size: AppDimensions.iconXL,
+                    size: AppDimensions.iconMedium,
                   ),
                   const SizedBox(width: AppDimensions.smallSpacing),
                   Flexible(
@@ -48,52 +52,52 @@ class HelpFaqScreen extends StatelessWidget {
                 horizontal: AppDimensions.screenPadding),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const SizedBox(height: AppDimensions.sectionSpacing),
+                const SizedBox(height: AppDimensions.elementSpacing),
                 Text(
-                  context.tr('Faq'),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                  context.tr('faqIntro'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
-                const SizedBox(height: AppDimensions.elementSpacing),
-                _buildFaqItem(context,
-                    question: context.tr('q1'),
-                    answer: context.tr('a1'),
-                    step: 0),
-                const SizedBox(height: AppDimensions.elementSpacing),
-                _buildFaqItem(context,
-                    question: context.tr('q2'),
-                    answer: context.tr('a2'),
-                    step: 1),
-                const SizedBox(height: AppDimensions.elementSpacing),
-                _buildFaqItem(context,
-                    question: context.tr('q7'),
-                    answer: context.tr('a7'),
-                    step: 2),
-                const SizedBox(height: AppDimensions.elementSpacing),
-                _buildFaqItem(context,
-                    question: context.tr('q3'),
-                    answer: context.tr('a3'),
-                    step: 3),
-                const SizedBox(height: AppDimensions.elementSpacing),
-                _buildFaqItem(context,
-                    question: context.tr('q4'),
-                    answer: context.tr('a4'),
-                    step: 4),
-                const SizedBox(height: AppDimensions.elementSpacing),
-                _buildFaqItem(context,
-                    question: context.tr('q5'),
-                    answer: context.tr('a5'),
-                    step: 5),
-                const SizedBox(height: AppDimensions.elementSpacing),
-                _buildFaqItem(context,
-                    question: context.tr('q6'),
-                    answer: context.tr('a6'),
-                    step: 6),
+                const SizedBox(height: AppDimensions.sectionSpacing),
+                _buildGroup(
+                  context,
+                  title: context.tr('faqGettingStarted'),
+                  accent: AppColors.primary,
+                  entranceStep: 0,
+                  items: [
+                    (context.tr('q1'), context.tr('a1')),
+                  ],
+                ),
+                const SizedBox(height: AppDimensions.sectionSpacing),
+                _buildGroup(
+                  context,
+                  title: context.tr('faqTracking'),
+                  accent: AppColors.secondary,
+                  entranceStep: 1,
+                  items: [
+                    (context.tr('q2'), context.tr('a2')),
+                    (context.tr('q7'), context.tr('a7')),
+                    (context.tr('q3'), context.tr('a3')),
+                  ],
+                ),
+                const SizedBox(height: AppDimensions.sectionSpacing),
+                _buildGroup(
+                  context,
+                  title: context.tr('faqDataPrivacy'),
+                  accent: AppColors.mint,
+                  entranceStep: 2,
+                  items: [
+                    (context.tr('q5'), context.tr('a5')),
+                    (context.tr('q4'), context.tr('a4')),
+                    (context.tr('q6'), context.tr('a6')),
+                  ],
+                ),
                 const SizedBox(height: AppDimensions.sectionSpacing),
                 ClayCard(
-                  entranceStep: 7,
+                  entranceStep: 3,
                   color: AppColors.primary.withValues(alpha: 0.05),
+                  onTap: () => Navigator.pushNamed(context, '/feedback'),
                   child: Row(
                     children: [
                       Container(
@@ -103,8 +107,8 @@ class HelpFaqScreen extends StatelessWidget {
                           color: AppColors.primary.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.contact_support,
+                        child: const Icon(
+                          Icons.contact_support_outlined,
                           color: AppColors.primary,
                           size: AppDimensions.iconMedium,
                         ),
@@ -131,6 +135,11 @@ class HelpFaqScreen extends StatelessWidget {
                           ],
                         ),
                       ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
                     ],
                   ),
                 ),
@@ -143,44 +152,103 @@ class HelpFaqScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFaqItem(
+  /// A titled group of accordion questions. The heading echoes the Learn
+  /// section style so the page shares the same visual language.
+  Widget _buildGroup(
     BuildContext context, {
-    required String question,
-    required String answer,
-    required int step,
+    required String title,
+    required Color accent,
+    required int entranceStep,
+    required List<(String, String)> items,
   }) {
     final theme = Theme.of(context);
 
-    return ClayCard(
-      entranceStep: step,
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          dividerColor: Colors.transparent,
-        ),
-        child: ExpansionTile(
-          tilePadding: EdgeInsets.zero,
-          dense: true,
-          title: Text(
-            question,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(
-                bottom: AppDimensions.elementSpacing,
-                top: AppDimensions.smallSpacing,
+            Container(
+              width: 3,
+              height: 18,
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(2),
               ),
-              child: Text(
-                answer,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
+            ),
+            const SizedBox(width: AppDimensions.smallSpacing + 2),
+            Text(
+              title,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
         ),
+        const SizedBox(height: AppDimensions.elementSpacing),
+        ClayCard(
+          entranceStep: entranceStep,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.elementSpacing,
+            vertical: AppDimensions.smallSpacing,
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: Column(
+              children: [
+                for (var i = 0; i < items.length; i++) ...[
+                  if (i > 0)
+                    Divider(
+                      height: 1,
+                      indent: 0,
+                      color:
+                          theme.colorScheme.outline.withValues(alpha: 0.1),
+                    ),
+                  _buildFaqItem(context, items[i].$1, items[i].$2, accent),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFaqItem(
+    BuildContext context,
+    String question,
+    String answer,
+    Color accent,
+  ) {
+    final theme = Theme.of(context);
+
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(
+          bottom: AppDimensions.elementSpacing,
+        ),
+        iconColor: accent,
+        collapsedIconColor: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+        title: Text(
+          question,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              answer,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

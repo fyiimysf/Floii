@@ -6,6 +6,7 @@ import '../models/cycle_models.dart';
 import '../services/cycle/cycle_calculation_service.dart';
 import '../services/cycle/period_log_service.dart';
 import '../services/storage/storage_service.dart';
+import '../services/widget/home_widget_service.dart';
 import '../utils/constants/colors.dart';
 import '../utils/constants/dimensions.dart';
 import '../utils/extensions/date_extensions.dart';
@@ -42,6 +43,45 @@ class _MainShellState extends State<MainShell> {
       GlobalKey<SettingsScreenState>();
   int _index = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    HomeWidgetService().pendingDeepLink.addListener(_onWidgetDeepLink);
+    // A cold start from a widget button can already have a link waiting.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onWidgetDeepLink());
+  }
+
+  @override
+  void dispose() {
+    HomeWidgetService().pendingDeepLink.removeListener(_onWidgetDeepLink);
+    super.dispose();
+  }
+
+  /// Routes a tap on a widget into the matching flow: the Insights widget face
+  /// opens the Insights tab, while the calendar's Log period / Log mood buttons
+  /// open their flows on the Home tab.
+  void _onWidgetDeepLink() {
+    final uri = HomeWidgetService().pendingDeepLink.value;
+    if (uri == null) return;
+    HomeWidgetService().pendingDeepLink.value = null;
+
+    switch (uri.host) {
+      case 'insights':
+        if (_index != 2) setState(() => _index = 2);
+      case 'log-period':
+      case 'log-mood':
+        if (_index != 0) setState(() => _index = 0);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (uri.host == 'log-period') {
+            _logPeriodToday();
+          } else {
+            _homeKey.currentState?.openMoodPicker();
+          }
+        });
+    }
+  }
+
   Map<String, dynamic> _computeStats() {
     final storage = StorageService();
     return CycleCalculationService.calculateStats(
@@ -66,6 +106,7 @@ class _MainShellState extends State<MainShell> {
       return;
     }
     setState(() => _index = index);
+    HapticFeedback.selectionClick();
     if (index == 1) {
       // the calendar tab just became visible; scroll to the current month
       // after the frame so its viewport is attached and measured.
