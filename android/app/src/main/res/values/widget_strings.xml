@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="floii_widget_label">Floii Calendar</string>
+    <string name="floii_widget_description">Cycle day, phase and your month at a glance</string>
+    <string name="floii_widget_log_period">Log period</string>
+    <string name="floii_widget_log_mood">Log mood</string>
+    <string name="floii_insights_widget_label">Floii Insights</string>
+    <string name="floii_insights_widget_description">Your cycle overview: phase, progress and next milestones</string>
+</resources>

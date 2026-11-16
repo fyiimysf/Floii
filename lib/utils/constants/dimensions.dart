@@ -33,6 +33,9 @@ class AppDimensions {
 
   static const double calendarCellSize = 44.0;
   static const double calendarDaySpacing = 4.0;
+  static const double calendarCellGap = 2.0;
+  static const double calendarGridPadding = 8.0;
+  static const double radiusCell = 6.0;
 
   static const double cardElevation = 8.0;
   static const double cardElevationClay = 4.0;

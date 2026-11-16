@@ -6,8 +6,13 @@
 ## ✨ Features
 
 - 🌕 **Cycle & Period Tracking** — Log and view menstrual cycles easily
+- ⚙️ **Custom Cycle Settings** — Set your typical period length and cycle length (21–40 days)
 - 🔮 **Ovulation & Fertility Insights** — Get predictions and insights into your fertile window
 - 📅 **Smart Predictions** — Floii gets smarter over time, helping predict future periods
+- 😊 **Mood Logging** — Note how you feel each day and browse your recent moods in Insights
+- 🔔 **Period Reminders** — A daily notification around your predicted period, at a time you choose
+- 💾 **Backup & Restore** — Export all your data to a JSON file and re-import it anytime
+- 🌍 **5 Languages** — English, العربية, اردو, Bahasa Indonesia, Deutsch
 - 🌿 **Lifestyle Recommendations** — Personalized tips to align with your cycle
 - 🔒 **Offline Support** — Your data stays on your device thanks to local storage with Hive DB
 
